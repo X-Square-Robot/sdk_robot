@@ -1,7 +1,7 @@
 """
-传感器数据采集配置
+Sensor Data Collection Configuration
 
-定义所有可采集的传感器数据流及其配置选项
+Define all collectible sensor data streams and configuration options
 """
 
 from dataclasses import dataclass, field
@@ -10,99 +10,107 @@ from typing import List, Optional
 
 @dataclass
 class CollectionConfig:
-    """传感器采集配置"""
+    """Sensor collection configuration"""
 
-    # 关节状态（从臂关节状态）
+    # Joint states (slave arm joint states)
     slave_joint_names: Optional[List[str]] = None
-    """从臂关节状态名称列表，例如: ['left_arm_joint_states', 'right_arm_joint_states']
-    如果为 None 或空列表，则不采集从臂关节状态
-    支持的关节状态名称：
-    - left_arm_joint_states: 左臂关节状态
-    - right_arm_joint_states: 右臂关节状态
-    - lift_joint_states: 升降关节状态（EX001）
-    - waist_joint_states: 腰部关节状态（CX002）
-    - left_gripper_joint_states: 左夹爪关节状态
-    - right_gripper_joint_states: 右夹爪关节状态
-    - head_joint_states: 头部关节状态"""
+    """Slave arm joint state name list, e.g.: ['left_arm_joint_states', 'right_arm_joint_states']
+    If None or empty list, slave arm joint states are not collected
+    Supported joint state names:
+    - left_arm_joint_states: Left arm joint states
+    - right_arm_joint_states: Right arm joint states
+    - lift_joint_states: Lift joint states (quanta_x1)
+    - waist_joint_states: Waist joint states (quanta_x2)
+    - left_gripper_joint_states: Left gripper joint states
+    - right_gripper_joint_states: Right gripper joint states
+    - head_joint_states: Head joint states"""
     
     slave_action_names: Optional[List[str]] = None
-    """从臂动作名称列表，例如: ['left_arm_actions', 'right_arm_actions']
-    如果为 None，将根据 slave_joint_names 自动生成（将 '_joint_states' 替换为 '_actions'）
-    如果为 []，则不采集动作数据"""
+    """Slave arm action name list, e.g.: ['left_arm_actions', 'right_arm_actions']
+    If None, will be automatically generated from slave_joint_names (replace '_joint_states' with '_actions')
+    If [], no action data will be collected"""
     
-    # 图像传感器（4种固定类型）
+    # Image sensors (4 fixed types)
     enable_head_rgb_stream: bool = False
-    """启用头部RGB视频流"""
+    """Enable head RGB video stream"""
 
     enable_head_depth_stream: bool = False
-    """启用头部深度视频流"""
+    """Enable head depth video stream"""
 
     enable_left_arm_rgb_stream: bool = False
-    """启用左臂RGB视频流"""
+    """Enable left arm RGB video stream"""
 
     enable_right_arm_rgb_stream: bool = False
-    """启用右臂RGB视频流"""
+    """Enable right arm RGB video stream"""
     
-    # 末端位姿
+    # End pose
     enable_left_arm_end_pose: bool = False
-    """启用左臂末端位姿"""
+    """Enable left arm end pose"""
     
     enable_right_arm_end_pose: bool = False
-    """启用右臂末端位姿"""
+    """Enable right arm end pose"""
 
     enable_wrench_ext_world: bool = False
-    """启用手腕外力"""
+    """Enable wrist external force"""
 
     enable_wrench_ext_local: bool = False
-    """启用手腕本地力"""
+    """Enable wrist local force"""
 
-    # 底盘传感器
+    enable_waist_end_pose: bool = False
+    """Enable waist end pose"""
+
     enable_odometry: bool = False
-    """启用底盘里程计（odom）"""
+    """Enable chassis odometry (odom)"""
     
     enable_pose: bool = False
-    """启用机器人定位数据（tracked_pose）"""
+    """Enable robot pose data (tracked_pose)"""
     
     enable_chassis_imu: bool = False
-    """启用底盘IMU数据"""
+    """Enable chassis IMU data"""
     
-    # 深度传感器
+    # Depth sensors
     enable_depth_points: bool = False
-    """启用底盘深度点云"""
+    """Enable chassis depth points"""
     
     enable_head_depth_video: bool = False
-    """启用头部深度视频流"""
+    """Enable head depth video stream"""
     
-    # 激光雷达
+    # Laser scanner
     enable_laser_scan: bool = False
-    """启用激光雷达扫描"""
+    """Enable laser scanner"""
+
+    enable_left_gripper_position: bool = False
+    """Enable left gripper position"""
+
+    enable_right_gripper_position: bool = False
+    """Enable right gripper position"""
     
-    # 触觉传感器
+    # Tactile sensors
     enable_left_gripper_tactile: bool = False
-    """启用左夹爪触觉传感器"""
+    """Enable left gripper tactile sensor"""
     
     enable_right_gripper_tactile: bool = False
-    """启用右夹爪触觉传感器"""
+    """Enable right gripper tactile sensor"""
     
     enable_left_hand_tactile: bool = False
-    """启用左灵巧手触觉传感器"""
+    """Enable left hand tactile sensor"""
     
     enable_right_hand_tactile: bool = False
-    """启用右灵巧手触觉传感器"""
+    """Enable right hand tactile sensor"""
     
     # 距离传感器
     enable_tof_sensors: bool = False
-    """启用ToF传感器（2个）"""
+    """Enable ToF sensors (2)"""
     
     enable_ultrasonic_sensors: bool = False
-    """启用超声波传感器（4个）"""
+    """Enable ultrasonic sensors (4)"""
 
     enable_master_arm_data: bool = False
-    """启用主臂状态, 关节和夹爪关节状态"""
+    """Enable master arm data, joint and gripper joint states"""
 
     
     def get_enabled_sensors(self) -> List[str]:
-        """获取所有启用的传感器列表"""
+        """Get all enabled sensors list"""
         enabled = []
         for field_name, field_value in self.__dict__.items():
             if field_name.startswith('enable_') and field_value:
@@ -111,7 +119,7 @@ class CollectionConfig:
         return enabled
     
     def get_camera_names(self) -> List[str]:
-        """获取启用的相机名称列表"""
+        """Get enabled camera names list"""
         cameras = []
         if self.enable_head_rgb_stream:
             cameras.append('head_rgb_stream')

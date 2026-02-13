@@ -80,7 +80,7 @@ def move_joints_toppra(body_part, target_positions: list, v_max=1.0, a_max=3):
 
 
 def stream_waist_data(robot: Robot, mode: str):
-    """演示腰部控制器的流式接口 - 实时监听关节状态"""
+    """Demonstrate waist controller's streaming interface - real-time monitoring of joint states"""
     print("Starting waist data streaming...")
     print("Press Ctrl+C to stop streaming")
 

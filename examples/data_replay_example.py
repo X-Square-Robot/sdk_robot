@@ -1,10 +1,10 @@
 """
-数据回放示例
+Data Replay Example
 
-这个脚本展示了如何读取采集的数据并进行回放
-支持两种回放模式：
-1. 关节位置回放 (joint_position)
-2. 末端位姿回放 (end_pose)
+This script demonstrates how to read collected data and replay it
+Supports two replay modes:
+1. Joint position replay
+2. End pose replay
 """
 
 import json
@@ -26,33 +26,33 @@ import numpy as np
 
 
 def signal_handler(sig, frame):
-    """处理Ctrl+C信号"""
-    print("\n\n收到中断信号，正在停止...")
+    """Handle Ctrl+C signal"""
+    print("\n\nReceived interrupt signal, stopping...")
     sys.exit(0)
 
 
 def load_episode_data(episode_path: str) -> dict:
-    """加载episode数据"""
+    """Load episode data"""
     episode_file = Path(episode_path) / "episode.json"
     
     if not episode_file.exists():
-        raise FileNotFoundError(f"找不到文件: {episode_file}")
+        raise FileNotFoundError(f"File not found: {episode_file}")
     
-    print(f"正在加载数据: {episode_file}")
+    print(f"Loading data: {episode_file}")
     with open(episode_file, 'r') as f:
         data = json.load(f)
-    
-    print(f"✓ 数据加载成功")
+
+    print(f"✓ Data loaded successfully")
     print(f"  - Episode ID: {data['episode_id']}")
-    print(f"  - 任务: {data['task']}")
-    print(f"  - 总帧数: {data['num_frames']}")
-    print(f"  - 时长: {data['duration']:.2f}s")
+    print(f"  - Task: {data['task']}")
+    print(f"  - Total frames: {data['num_frames']}")
+    print(f"  - Duration: {data['duration']:.2f}s")
     
     return data
 
 
 def filter_nan_values(joint_positions: list) -> list:
-    """过滤掉NaN值，保留有效的关节位置"""
+    """Filter out NaN values, keep valid joint positions"""
     filtered = []
     for pos in joint_positions:
         if pos is None or (isinstance(pos, float) and math.isnan(pos)):
@@ -62,19 +62,19 @@ def filter_nan_values(joint_positions: list) -> list:
 
 
 def quaternion_to_yaw(x: float, y: float, z: float, w: float) -> float:
-    """将四元数转换为yaw角（绕Z轴旋转）"""
+    """Convert quaternion to yaw angle (rotation around Z-axis)"""
     # yaw = atan2(2*(w*z + x*y), 1 - 2*(y^2 + z^2))
     return math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
 
 
 class ChassisController(threading.Thread):
-    """底盘控制线程 - 高频持续控制底盘速度"""
+    """Chassis control thread - high-frequency continuous chassis velocity control"""
     
     def __init__(self, robot, control_rate=100.0):
         """
         Args:
-            robot: 机器人实例
-            control_rate: 控制频率 (Hz)
+            robot: Robot instance
+            control_rate: Control frequency (Hz)
         """
         super().__init__(daemon=True)
         self.robot = robot
@@ -85,176 +85,176 @@ class ChassisController(threading.Thread):
         self.lock = threading.Lock()
         self.running = False
         
-        # 控制参数
+        # Control parameters
         self.max_linear_vel = 0.3  # m/s
         self.max_angular_vel = 0.5  # rad/s
         self.kp_linear = 2.0
         self.kp_angular = 2.0
     
     def set_target_odom(self, target_odom):
-        """设置目标odometry（线程安全）"""
+        """Set target odometry (thread-safe)"""
         with self.lock:
             self.target_odom = target_odom
     
     def stop(self):
-        """停止线程"""
+        """Stop thread"""
         self.running = False
-        # 停止底盘
+        # Stop chassis
         try:
             self.robot.chassis.set_velocity(ChassisVelocity(vel_x=0, vel_y=0, vel_yaw=0))
         except:
             pass
     
     def run(self):
-        """线程主循环 - 高频控制底盘"""
+        """Thread main loop - high-frequency chassis control"""
         self.running = True
         
         while self.running:
             try:
                 loop_start = time.time()
                 
-                # 获取目标位置（线程安全）
+                # Get target position (thread-safe)
                 with self.lock:
                     target = self.target_odom
-                
+
                 if target is None:
-                    # 没有目标，停止底盘
+                    # No target, stop chassis
                     self.robot.chassis.set_velocity(ChassisVelocity(vel_x=0, vel_y=0, vel_yaw=0))
                 else:
-                    # 获取当前位置
+                    # Get current position
                     current_odom_msg = self.robot.chassis.get_odometry()
-                    
-                    # 提取当前位置
+
+                    # Extract current position
                     curr_x = current_odom_msg.pose.pose.position.x
                     curr_y = current_odom_msg.pose.pose.position.y
                     curr_ori = current_odom_msg.pose.pose.orientation
                     curr_yaw = quaternion_to_yaw(curr_ori.x, curr_ori.y, curr_ori.z, curr_ori.w)
-                    
-                    # 提取目标位置
+
+                    # Extract target position
                     target_x = target['pose']['position']['x']
                     target_y = target['pose']['position']['y']
                     target_ori = target['pose']['orientation']
-                    target_yaw = quaternion_to_yaw(target_ori['x'], target_ori['y'], 
+                    target_yaw = quaternion_to_yaw(target_ori['x'], target_ori['y'],
                                                    target_ori['z'], target_ori['w'])
-                    
-                    # 计算位置差异
+
+                    # Calculate position difference
                     dx = target_x - curr_x
                     dy = target_y - curr_y
                     distance = math.sqrt(dx * dx + dy * dy)
-                    
-                    # 计算角度差异
+
+                    # Calculate angle difference
                     dyaw = target_yaw - curr_yaw
                     while dyaw > math.pi:
                         dyaw -= 2 * math.pi
                     while dyaw < -math.pi:
                         dyaw += 2 * math.pi
-                    
-                    # 计算速度（P控制器）
-                    if distance < 0.01 and abs(dyaw) < 0.05:  # 1cm, 3度
+
+                    # Calculate velocity (P controller)
+                    if distance < 0.01 and abs(dyaw) < 0.05:  # 1cm, 3 degrees
                         vel_x, vel_y, vel_yaw = 0, 0, 0
                     else:
                         angle_to_target = math.atan2(dy, dx)
                         angle_diff = angle_to_target - curr_yaw
-                        
+
                         while angle_diff > math.pi:
                             angle_diff -= 2 * math.pi
                         while angle_diff < -math.pi:
                             angle_diff += 2 * math.pi
-                        
+
                         vel_x = self.kp_linear * distance * math.cos(angle_diff)
                         vel_y = self.kp_linear * distance * math.sin(angle_diff)
                         vel_yaw = self.kp_angular * dyaw
-                        
-                        # 限制速度
+
+                        # Limit velocity
                         vel_x = max(-self.max_linear_vel, min(self.max_linear_vel, vel_x))
                         vel_y = max(-self.max_linear_vel, min(self.max_linear_vel, vel_y))
                         vel_yaw = max(-self.max_angular_vel, min(self.max_angular_vel, vel_yaw))
-                    
-                    # 发送速度命令
+
+                    # Send velocity command
                     chassis_vel = ChassisVelocity(vel_x=vel_x, vel_y=vel_y, vel_yaw=vel_yaw)
                     self.robot.chassis.set_velocity(chassis_vel)
                 
-                # 控制循环频率
+                # Control loop frequency
                 loop_time = time.time() - loop_start
                 sleep_time = self.control_interval - loop_time
                 if sleep_time > 0:
                     time.sleep(sleep_time)
                     
             except Exception as e:
-                # 出错时继续运行，避免线程崩溃
+                # Continue running on error to avoid thread crash
                 pass
 
 
 def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float = 1.0):
-    """按关节位置回放所有关节和底盘
-    
+    """Replay all joints and chassis by joint positions
+
     Args:
-        robot: 机器人实例
-        episode_data: episode数据
-        playback_speed: 回放速度倍率（1.0为正常速度）
-    
+        robot: Robot instance
+        episode_data: Episode data
+        playback_speed: Playback speed multiplier (1.0 = normal speed)
+
     Note:
-        回放所有部件：
-        - 底盘位置（使用速度控制）
-        - 双臂关节（6个/臂）
-        - 双手夹爪
-        - 升降台 (EX001) / 腰部 (CX002)
-        - 头部姿态（yaw + pitch）
+        Replay all components:
+        - Chassis position (using velocity control)
+        - Dual arm joints (6 joints per arm)
+        - Both grippers
+        - Lift (quanta_x1) / Waist (quanta_x2)
+        - Head pose (yaw + pitch)
     """
     print("\n" + "="*60)
-    print("回放模式: 关节位置控制")
+    print("Replay mode: Joint position control")
     print("="*60)
-    
+
     robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
-    
-    # 设置机器人控制模式为关节位置控制
-    print("正在设置控制模式为关节位置控制...")
+
+    # Set robot control mode to joint position control
+    print("Setting control mode to joint position control...")
     mode_param = ManipulatorControlModeParam(
         mode=ManipulatorControlMode.MANIPULATOR_JOINT_POSITIONS
     )
     result = robot.robot_control.set_manipulator_control_mode(mode_param)
-    
+
     if not result.is_success:
-        print(f"✗ 设置控制模式失败: {result.error_message}")
+        print(f"✗ Failed to set control mode: {result.error_message}")
         return
-    
-    print("✓ 控制模式设置成功")
-    
-    # 设置底盘为速度控制模式
-    print("正在设置底盘为速度控制模式...")
+
+    print("✓ Control mode set successfully")
+
+    # Set chassis to velocity control mode
+    print("Setting chassis to velocity control mode...")
     chassis_mode = ChassisControlModeParam(mode=ChassisControlMode.VELOCITY)
     chassis_result = robot.chassis.set_control_mode(chassis_mode)
-    
+
     if not chassis_result.is_success:
-        print(f"警告: 底盘控制模式设置失败 - {chassis_result.error_message}")
+        print(f"Warning: Chassis control mode setting failed - {chassis_result.error_message}")
     else:
-        print("✓ 底盘速度控制模式设置成功")
-    
-    # 启动底盘控制线程（100Hz高频控制）
-    print("正在启动底盘控制线程...")
+        print("✓ Chassis velocity control mode set successfully")
+
+    # Start chassis control thread (100Hz high-frequency control)
+    print("Starting chassis control thread...")
     chassis_controller = ChassisController(robot)
     chassis_controller.start()
-    print("✓ 底盘控制线程已启动 (50Hz)")
+    print("✓ Chassis control thread started (50Hz)")
     
     frames = episode_data['frames']
     total_frames = len(frames)
     
-    print(f"\n开始回放 {total_frames} 帧数据...")
-    print("按 Ctrl+C 停止回放\n")
+    print(f"\nStarting replay of {total_frames} frames...")
+    print("Press Ctrl+C to stop replay\n")
     
     start_time = time.time()
     
     for i, frame in enumerate(frames):
         try:
-            # 【第0步】更新底盘目标位置（线程会持续控制）
+            # [Step 0] Update chassis target position (thread will continuously control)
             target_odom = frame['observation'].get('odometry')
             if target_odom:
                 chassis_controller.set_target_odom(target_odom)
             
-            # 从新的数据格式中获取各部位的关节状态
+            # Get joint states of each part from the new data format
             observation = frame.get('observation', {})
             
-            # 获取左臂关节位置
+            # Get left arm joint positions
             left_arm_joint_states = observation.get('left_arm_joint_states')
             if left_arm_joint_states and 'positions' in left_arm_joint_states:
                 left_arm_positions = filter_nan_values(left_arm_joint_states['positions'])
@@ -262,9 +262,9 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                     left_joint_msg = JointPositions(positions=left_arm_positions)
                     left_result = robot.left_arm.set_joint_positions(left_joint_msg)
                     if not left_result.is_success:
-                        print(f"警告: 左臂控制失败 - {left_result.error_message}")
+                        print(f"Warning: Left arm control failed - {left_result.error_message}")
             
-            # 获取右臂关节位置
+            # Get right arm joint positions
             right_arm_joint_states = observation.get('right_arm_joint_states')
             if right_arm_joint_states and 'positions' in right_arm_joint_states:
                 right_arm_positions = filter_nan_values(right_arm_joint_states['positions'])
@@ -272,9 +272,9 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                     right_joint_msg = JointPositions(positions=right_arm_positions)
                     right_result = robot.right_arm.set_joint_positions(right_joint_msg)
                     if not right_result.is_success:
-                        print(f"警告: 右臂控制失败 - {right_result.error_message}")
+                        print(f"Warning: Right arm control failed - {right_result.error_message}")
             
-            # 获取左夹爪位置
+            # Get left gripper position
             left_gripper_joint_states = observation.get('left_gripper_joint_states')
             if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
                 left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
@@ -283,9 +283,9 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                         robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 左夹爪控制失败 - {e}")
+                            print(f"Warning: Left gripper control failed - {e}")
             
-            # 获取右夹爪位置
+            # Get right gripper position
             right_gripper_joint_states = observation.get('right_gripper_joint_states')
             if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
                 right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
@@ -294,55 +294,65 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                         robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 右夹爪控制失败 - {e}")
+                            print(f"Warning: Right gripper control failed - {e}")
             
-            # 获取升降台/腰部位置
-            lift_joint_states = observation.get('lift_joint_states')
-            if lift_joint_states and 'positions' in lift_joint_states:
-                lift_positions = filter_nan_values(lift_joint_states['positions'])
-                if lift_positions:
-                    try:
-                        robot_model = robot.get_robot_model()
-                        if robot_model == "EX001":
+            # Get lift/waist position
+            robot_model = robot.get_robot_model()
+            if robot_model == "quanta_x1":
+                lift_joint_states = observation.get('lift_joint_states')
+                if lift_joint_states and 'positions' in lift_joint_states:
+                    lift_positions = filter_nan_values(lift_joint_states['positions'])
+                    if lift_positions:
+                        try:
                             robot.lift.set_lift_position(LiftPosition(position=lift_positions[0]))
-                        elif robot_model == "CX002":
-                            robot.waist.set_joint_positions(JointPositions(positions=[lift_positions[0]]))
-                    except Exception as e:
-                        if i == 0:
-                            print(f"警告: 升降台/腰部控制失败 - {e}")
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Lift control failed - {e}")
+            elif robot_model == "quanta_x2":
+                waist_joint_states = observation.get('waist_joint_states')
+                if waist_joint_states and 'positions' in waist_joint_states:
+                    waist_positions = filter_nan_values(waist_joint_states['positions'])
+                    if waist_positions:
+                        try:
+                            robot.waist.set_joint_positions(JointPositions(positions=[waist_positions[0]]))
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Waist control failed - {e}")
+            else:
+                print(f"Warning: Unsupported robot model: {robot_model}")
             
-            # 获取头部位置
+            # Get head position
             head_joint_states = observation.get('head_joint_states')
             if head_joint_states and 'positions' in head_joint_states:
                 head_positions = filter_nan_values(head_joint_states['positions'])
                 if len(head_positions) >= 2:
                     try:
-                        # 根据joint_names中的顺序确定yaw和pitch的顺序
-                        # 如果joint_names是 ["head_pitch_joint", "head_yaw_joint"]，则顺序是 [pitch, yaw]
-                        # 如果joint_names是 ["head_yaw_joint", "head_pitch_joint"]，则顺序是 [yaw, pitch]
-                        # 默认假设顺序是 [pitch, yaw]
+                        # Determine the order of yaw and pitch based on joint_names
+                        # If joint_names is ["head_pitch_joint", "head_yaw_joint"], the order is [pitch, yaw]
+                        # If joint_names is ["head_yaw_joint", "head_pitch_joint"], the order is [yaw, pitch]
+                        # Default assumption is [pitch, yaw]
                         robot.head.set_pose(HeadPose(pitch=head_positions[0], yaw=head_positions[1]))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 头部控制失败 - {e}")
+                            print(f"Warning: Head control failed - {e}")
                 elif len(head_positions) == 1:
-                    # 只有一个关节的情况
+                    # Only one joint case
                     try:
                         robot.head.set_pose(HeadPose(pitch=0, yaw=head_positions[0]))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 头部控制失败 - {e}")
+                            print(f"Warning: Head control failed - {e}")
             
-            # 计算进度
+            # Calculate progress
             progress = (i + 1) / total_frames * 100
             
-            # 每10帧打印一次进度
+            # Print progress every 10 frames
             if i % 10 == 0:
                 elapsed = time.time() - start_time
-                print(f"进度: {progress:.1f}% ({i+1}/{total_frames}) | "
-                      f"用时: {elapsed:.2f}s", end='\r')
+                print(f"Progress: {progress:.1f}% ({i+1}/{total_frames}) | "
+                      f"Time: {elapsed:.2f}s", end='\r')
             
-            # 控制回放速度（底盘由独立线程控制）
+            # Control playback speed (chassis by independent thread)
             if i < total_frames - 1:
                 next_timestamp = frames[i + 1]['timestamp']
                 current_timestamp = frame['timestamp']
@@ -352,131 +362,134 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                     time.sleep(sleep_time)
         
         except KeyboardInterrupt:
-            print("\n\n回放被用户中断")
+            print("\n\nReplay interrupted by user")
             break
         except Exception as e:
-            print(f"\n警告: 帧 {i} 处理失败: {e}")
+            print(f"\nWarning: Frame {i} processing failed: {e}")
             continue
     
-    # 停止底盘控制线程
+    # Stop chassis control thread
     chassis_controller.stop()
     chassis_controller.join(timeout=1.0)
     
     elapsed = time.time() - start_time
-    print(f"\n\n✓ 回放完成! 用时: {elapsed:.2f}s")
+    print(f"\n\n✓ Replay completed! Time: {elapsed:.2f}s")
 
 
 def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
-    """按末端位姿回放（包含底盘、夹爪、腰部/升降台、头部）
+    """Replay by end pose (including chassis, grippers, waist/lift, head)
     
     Args:
-        robot: 机器人实例
-        episode_data: episode数据
-        playback_speed: 回放速度倍率（1.0为正常速度）
+        robot: Robot instance
+        episode_data: Episode data
+        playback_speed: Playback speed multiplier (1.0 = normal speed)
     
     Note:
-        执行顺序（重要）：
-        0. 控制底盘移动到目标位置（使用速度控制）
-        1. 控制腰部/升降台（调整工作空间）
-        2. 控制双臂末端位姿（确保位姿可达）
-        3. 控制夹爪和头部
+        Execution order (important):
+        0. Control chassis to target position (using velocity control)
+        1. Control waist/lift (adjust workspace)
+        2. Control dual arm end pose (ensure pose reachable)
+        3. Control grippers and head
         
-        这个顺序很重要：必须先调整底盘和腰部/升降台位置，
-        否则手臂末端位姿可能不可达。
+        This order is important: Must first adjust chassis and waist/lift position,
+        otherwise the arm end pose may not be reachable.
     """
     print("\n" + "="*60)
-    print("回放模式: 末端位姿控制")
+    print("Replay mode: End pose control")
     print("="*60)
 
     robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
     
-    # 设置机器人控制模式为末端位姿控制
-    print("正在设置控制模式为末端位姿控制...")
+    # Set robot control mode to end pose control
+    print("Setting control mode to end pose control...")
     mode_param = ManipulatorControlModeParam(
         mode=ManipulatorControlMode.MANIPULATOR_END_POSE
     )
     result = robot.robot_control.set_manipulator_control_mode(mode_param)
     
     if not result.is_success:
-        print(f"✗ 设置控制模式失败: {result.error_message}")
+        print(f"✗ Failed to set control mode: {result.error_message}")
         return
     
-    print("✓ 控制模式设置成功")
+    print("✓ Control mode set successfully")
     
-    # 设置底盘为速度控制模式
-    print("正在设置底盘为速度控制模式...")
+    # Set chassis to velocity control mode
+    print("Setting chassis to velocity control mode...")
     chassis_mode = ChassisControlModeParam(mode=ChassisControlMode.VELOCITY)
     chassis_result = robot.chassis.set_control_mode(chassis_mode)
     
     if not chassis_result.is_success:
-        print(f"警告: 底盘控制模式设置失败 - {chassis_result.error_message}")
+        print(f"Warning: Chassis control mode setting failed - {chassis_result.error_message}")
     else:
-        print("✓ 底盘速度控制模式设置成功")
+        print("✓ Chassis velocity control mode set successfully")
     
-    # 启动底盘控制线程（100Hz高频控制）
-    print("正在启动底盘控制线程...")
+    # Start chassis control thread (100Hz high frequency control)
+    print("Starting chassis control thread...")
     chassis_controller = ChassisController(robot, control_rate=100.0)
     chassis_controller.start()
-    print("✓ 底盘控制线程已启动 (100Hz)")
+    print("✓ Chassis control thread started (100Hz)")
     
     frames = episode_data['frames']
     total_frames = len(frames)
     
-    print(f"\n开始回放 {total_frames} 帧数据...")
-    print("按 Ctrl+C 停止回放\n")
+    print(f"\nStarting replay of {total_frames} frames...")
+    print("Press Ctrl+C to stop replay\n")
     
     start_time = time.time()
     valid_frames = 0
     
     for i, frame in enumerate(frames):
         try:
-            # 【第0步】更新底盘目标位置（线程会持续控制）
+            # [Step 0] Update chassis target position (thread will continuously control)
             target_odom = frame['observation'].get('odometry')
             if target_odom:
                 chassis_controller.set_target_odom(target_odom)
             
-            # 【第1步】先控制腰部/升降台（调整工作空间，使末端位姿可达）
+            # [Step 1] Control waist/lift (adjust workspace, make end pose reachable)
             observation = frame.get('observation', {})
             
-            # 获取升降台/腰部位置
-            lift_joint_states = observation.get('lift_joint_states')
-            if lift_joint_states and 'positions' in lift_joint_states:
-                lift_positions = filter_nan_values(lift_joint_states['positions'])
-                if lift_positions:
-                    try:
-                        robot_model = robot.get_robot_model()
-                        if robot_model == "EX001":
+            # Get lift/waist position
+            robot_model = robot.get_robot_model()
+            if robot_model == "quanta_x1":
+                lift_joint_states = observation.get('lift_joint_states')
+                if lift_joint_states and 'positions' in lift_joint_states:
+                    lift_positions = filter_nan_values(lift_joint_states['positions'])
+                    if lift_positions:
+                        try:
                             robot.lift.set_lift_position(LiftPosition(position=lift_positions[0]))
-                        elif robot_model == "CX002":
-                            robot.waist.set_joint_positions(JointPositions(positions=[lift_positions[0]]))
-                    except Exception as e:
-                        if i == 0:
-                            print(f"警告: 升降台/腰部控制失败 - {e}")
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Lift control failed - {e}")
+            elif robot_model == "quanta_x2":
+                # In end pose mode, do not control waist end pose
+                pass
+            else:
+                print(f"Warning: Unsupported robot model: {robot_model}")
             
-            # 获取末端位姿
+            # Get end pose
             left_end_pose = frame['observation'].get('left_arm_end_pose')
             right_end_pose = frame['observation'].get('right_arm_end_pose')
             
-            # 检查位姿是否有效（非零）
+            # Check if pose is valid (non-zero)
             def is_valid_pose(pose_data):
                 if not pose_data:
                     return False
                 pos = pose_data['position']
                 ori = pose_data['orientation']
-                # 检查是否全为零（无效数据）
+                # Check if all are zero (invalid data)
                 return not (pos['x'] == 0 and pos['y'] == 0 and pos['z'] == 0 and
                            ori['x'] == 0 and ori['y'] == 0 and ori['z'] == 0 and ori['w'] == 1)
             
-            # 【第2步】发送左臂末端位姿
+            # [Step 2] Send left arm end pose
             if left_end_pose and is_valid_pose(left_end_pose):
-                # 创建Position
+                # Create Position
                 left_position = geometry_msgs.Point(
                     x=left_end_pose['position']['x'],
                     y=left_end_pose['position']['y'],
                     z=left_end_pose['position']['z']
                 )
                 
-                # 创建Orientation
+                # Create Orientation
                 left_orientation = geometry_msgs.Quaternion(
                     x=left_end_pose['orientation']['x'],
                     y=left_end_pose['orientation']['y'],
@@ -484,7 +497,7 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                     w=left_end_pose['orientation']['w']
                 )
                 
-                # 创建Pose
+                # Create Pose
                 left_pose_msg = geometry_msgs.Pose(
                     position=left_position,
                     orientation=left_orientation
@@ -493,18 +506,18 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                 left_result = robot.left_arm.set_end_pose(left_pose_msg)
                 
                 if not left_result.is_success:
-                    print(f"警告: 左臂位姿控制失败 - {left_result.error_message}")
+                    print(f"Warning: Left arm end pose control failed - {left_result.error_message}")
             
-            # 发送右臂末端位姿
+            # Send right arm end pose
             if right_end_pose and is_valid_pose(right_end_pose):
-                # 创建Position
+                # Create Position
                 right_position = geometry_msgs.Point(
                     x=right_end_pose['position']['x'],
                     y=right_end_pose['position']['y'],
                     z=right_end_pose['position']['z']
                 )
                 
-                # 创建Orientation
+                # Create Orientation
                 right_orientation = geometry_msgs.Quaternion(
                     x=right_end_pose['orientation']['x'],
                     y=right_end_pose['orientation']['y'],
@@ -512,7 +525,7 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                     w=right_end_pose['orientation']['w']
                 )
                 
-                # 创建Pose
+                # Create Pose
                 right_pose_msg = geometry_msgs.Pose(
                     position=right_position,
                     orientation=right_orientation
@@ -521,62 +534,81 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                 right_result = robot.right_arm.set_end_pose(right_pose_msg)
                 
                 if not right_result.is_success:
-                    print(f"警告: 右臂位姿控制失败 - {right_result.error_message}")
+                    print(f"Warning: Right arm end pose control failed - {right_result.error_message}")
                 
                 valid_frames += 1
             
-            # 【第3步】控制夹爪和头部
-            # 获取左夹爪位置
-            left_gripper_joint_states = observation.get('left_gripper_joint_states')
-            if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
-                left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
-                if left_gripper_positions:
+            # [Step 3] Control grippers and head
+            if (robot_model == "quanta_x2"):
+                left_gripper_position = observation.get('left_gripper_position')
+                right_gripper_position = observation.get('right_gripper_position')
+                if left_gripper_position and right_gripper_position:
                     try:
-                        robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
+                        position = left_gripper_position['position']
+                        robot.left_gripper.set_position(GripperPosition(position=position))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 左夹爪控制失败 - {e}")
-            
-            # 获取右夹爪位置
-            right_gripper_joint_states = observation.get('right_gripper_joint_states')
-            if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
-                right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
-                if right_gripper_positions:
+                            print(f"Warning: Left gripper control failed - {e}")
                     try:
-                        robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
+                        position = right_gripper_position['position']
+                        robot.right_gripper.set_position(GripperPosition(position=position))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 右夹爪控制失败 - {e}")
-            
-            # 获取头部位置
+                            print(f"Warning: Right gripper control failed - {e}")
+            else:
+                # Get left gripper position
+                left_gripper_joint_states = observation.get('left_gripper_joint_states')
+                if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
+                    left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
+                    if left_gripper_positions:
+                        try:
+                            robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Left gripper control failed - {e}")
+                
+                # Get right gripper position
+                right_gripper_joint_states = observation.get('right_gripper_joint_states')
+                if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
+                    right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
+                    if right_gripper_positions:
+                        try:
+                            robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Right gripper control failed - {e}")
+                
+            # Get head position
             head_joint_states = observation.get('head_joint_states')
             if head_joint_states and 'positions' in head_joint_states:
                 head_positions = filter_nan_values(head_joint_states['positions'])
                 if len(head_positions) >= 2:
                     try:
-                        # 根据joint_names中的顺序确定yaw和pitch的顺序
-                        # 默认假设顺序是 [pitch, yaw]
+                        # Determine the order of yaw and pitch based on joint_names
+                        # If joint_names is ["head_pitch_joint", "head_yaw_joint"], the order is [pitch, yaw]
+                        # If joint_names is ["head_yaw_joint", "head_pitch_joint"], the order is [yaw, pitch]
+                        # Default assumption is [pitch, yaw]
                         robot.head.set_pose(HeadPose(pitch=head_positions[0], yaw=head_positions[1]))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 头部控制失败 - {e}")
+                            print(f"Warning: Head control failed - {e}")
                 elif len(head_positions) == 1:
                     try:
                         robot.head.set_pose(HeadPose(pitch=0, yaw=head_positions[0]))
                     except Exception as e:
                         if i == 0:
-                            print(f"警告: 头部控制失败 - {e}")
+                            print(f"Warning: Head control failed - {e}")
             
-            # 计算进度
+            # Calculate progress
             progress = (i + 1) / total_frames * 100
             
-            # 每10帧打印一次进度
+            # Print progress every 10 frames
             if i % 10 == 0:
                 elapsed = time.time() - start_time
-                print(f"进度: {progress:.1f}% ({i+1}/{total_frames}) | "
-                      f"有效帧: {valid_frames} | 用时: {elapsed:.2f}s", end='\r')
+                print(f"Progress: {progress:.1f}% ({i+1}/{total_frames}) | "
+                      f"Valid frames: {valid_frames} | Time: {elapsed:.2f}s", end='\r')
             
-            # 控制回放速度
+            # Control playback speed
             if i < total_frames - 1:
                 next_timestamp = frames[i + 1]['timestamp']
                 current_timestamp = frame['timestamp']
@@ -586,88 +618,87 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                     time.sleep(sleep_time)
         
         except KeyboardInterrupt:
-            print("\n\n回放被用户中断")
+            print("\n\nReplay interrupted by user")
             break
         except Exception as e:
-            print(f"\n警告: 帧 {i} 处理失败: {e}")
+            print(f"\nWarning: Frame {i} processing failed: {e}")
             continue
     
-    # 停止底盘控制线程
+    # Stop chassis control thread
     chassis_controller.stop()
     chassis_controller.join(timeout=1.0)
     
     elapsed = time.time() - start_time
-    print(f"\n\n✓ 回放完成! 用时: {elapsed:.2f}s")
-    print(f"  有效帧数: {valid_frames}/{total_frames}")
+    print(f"\n\n✓ Replay completed! Time: {elapsed:.2f}s")
+    print(f"  Valid frames: {valid_frames}/{total_frames}")
 
 
 def main(
-    episode_dir: Annotated[str, typer.Argument(help="Episode目录路径，例如: ./collected_data/episode_0000")],
-    server: Annotated[str, typer.Option(help="机器人服务器地址")] = "localhost:50051",
-    mode: Annotated[Literal["joint_pos", "end_pose"], typer.Option(help="回放模式")] = "joint_pos",
-    speed: Annotated[float, typer.Option(help="回放速度倍率 (例如: 1.0=正常, 0.5=慢速, 2.0=快速)")] = 1.0,
+    episode_dir: Annotated[str, typer.Argument(help="Episode directory path, e.g., ./collected_data/episode_0000")],
+    server: Annotated[str, typer.Option(help="Robot server address, e.g., localhost:50051")] = "localhost:50051",
+    mode: Annotated[Literal["joint_pos", "end_pose"], typer.Option(help="Replay mode")] = "joint_pos",
+    speed: Annotated[float, typer.Option(help="Replay speed multiplier (e.g., 1.0=normal, 0.5=slow, 2.0=fast)")] = 1.0,
 ):
     """
-    数据回放脚本 - 自动回放所有关节和底盘
+    Data replay script - automatically replay all joints and chassis
     
-    两种回放模式（都会回放所有部件）：
-    1. joint_pos: 关节位置回放（底盘+手臂+夹爪+升降台/腰部+头部）
-    2. end_pose: 末端位姿回放（底盘+双臂末端位姿+夹爪+腰部/升降台+头部）
+    Two replay modes (both will replay all components):
+    1. joint_pos: Joint position replay (chassis + arms + grippers + lift/waist + head)
+    2. end_pose: End pose replay (chassis + dual arm end pose + grippers + lift/waist + head)
     
-    底盘控制方式：
-    - 使用独立线程以100Hz频率持续控制底盘
-    - 根据当前odometry和目标odometry实时计算速度
-    - 使用P控制器平滑跟踪目标位置
+    Chassis control mode:
+    - Use independent thread to continuously control chassis at 100Hz frequency
+    - Calculate speed based on current odometry and target odometry
+
+    Examples:
     
-    示例:
-    
-    # 关节位置回放（正常速度）
+    # Joint position replay (normal speed)
     python data_replay_example.py ./collected_data/episode_0000 --mode joint_pos
     
-    # 末端位姿回放
+    # End pose replay
     python data_replay_example.py ./collected_data/episode_0000 --mode end_pose
     
-    # 慢速回放（0.5倍速）
+    # Slow replay (0.5x speed)
     python data_replay_example.py ./collected_data/episode_0000 --speed 0.5
     
-    # 快速回放（2倍速）
+    # Fast replay (2x speed)
     python data_replay_example.py ./collected_data/episode_0000 --speed 2.0
     """
-    # 注册信号处理器
+    # Register signal handler
     signal.signal(signal.SIGINT, signal_handler)
     
-    # 加载数据
+    # Load data
     try:
         episode_data = load_episode_data(episode_dir)
     except Exception as e:
-        print(f"✗ 加载数据失败: {e}")
+        print(f"✗ Failed to load data: {e}")
         sys.exit(1)
     
-    # 连接机器人
-    print(f"\n正在连接机器人 {server}...")
+    # Connect to robot
+    print(f"\nConnecting to robot {server}...")
     try:
         robot = connect(f"x2://{server}")
-        print("✓ 机器人连接成功")
-        print(f"  机器人型号: {robot.get_robot_model()}")
+        print("✓ Robot connected successfully")
+        print(f"  Robot model: {robot.get_robot_model()}")
     except Exception as e:
-        print(f"✗ 连接失败: {e}")
+        print(f"✗ Connection failed: {e}")
         sys.exit(1)
     
-    # 确认开始
+    # Confirm start
     robot_model = robot.get_robot_model()
-    print(f"\n回放配置:")
-    print(f"  - 模式: {mode}")
-    print(f"  - 速度: {speed}x")
-    print(f"  - 帧数: {episode_data['num_frames']}")
+    print(f"\nReplay configuration:")
+    print(f"  - Mode: {mode}")
+    print(f"  - Speed: {speed}x")
+    print(f"  - Number of frames: {episode_data['num_frames']}")
     
     if mode == "joint_pos":
-        waist_lift = "升降台" if robot_model == "EX001" else "腰部"
-        print(f"  - 回放内容: 底盘 + 双臂关节 + 夹爪 + {waist_lift} + 头部")
+        waist_lift = "Lift" if robot_model == "quanta_x1" else "Waist"
+        print(f"  - Replay content: Chassis + Dual arms + Grippers + {waist_lift} + Head")
     elif mode == "end_pose":
-        waist_lift = "升降台" if robot_model == "EX001" else "腰部"
-        print(f"  - 回放内容: 底盘 + 双臂末端位姿 + 夹爪 + {waist_lift} + 头部")
+        waist_lift = "Lift" if robot_model == "quanta_x1" else "Waist"
+        print(f"  - Replay content: Chassis + Dual arms end pose + Grippers + {waist_lift} + Head")
     
-    input("\n按 Enter 开始回放...")
+    input("\nPress Enter to start replay...")
     
     try:
         if mode == "joint_pos":
@@ -675,15 +706,15 @@ def main(
         elif mode == "end_pose":
             replay_by_end_pose(robot, episode_data, speed)
         else:
-            print(f"✗ 未知的回放模式: {mode}")
+            print(f"✗ Unknown replay mode: {mode}")
             sys.exit(1)
     except Exception as e:
-        print(f"\n✗ 回放过程中出错: {e}")
+        print(f"\n✗ Error during replay: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
     
-    print("\n回放结束")
+    print("\nReplay completed")
 
 
 if __name__ == "__main__":

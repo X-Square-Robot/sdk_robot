@@ -69,63 +69,6 @@ python check_connect.py --server 192.168.10.1:50051
 
 ---
 
-## custom_data_collection_example.py
-
-Fully Custom Data Collection Example
-
-This script demonstrates how to fully manually control data collection without using any wrapper layers.
-Users directly specify the data types to collect and fully control the collection process.
-
-Main Features:
-
-- Fully manual control of collected data types
-- No dependency on any configuration classes
-- Direct calls to robot interfaces
-- Custom data formats and storage logic
-- Flexible collection control
-
-Usage:
-
-1. Basic usage:
-   python3 custom_data_collection_example.py
-
-2. Specify configuration:
-   python3 custom_data_collection_example.py --config minimal    # Collect only joint states
-   python3 custom_data_collection_example.py --config vision     # Collect only vision data
-   python3 custom_data_collection_example.py --config full       # Collect all data
-
-3. Custom data sources:
-   python3 custom_data_collection_example.py --config "joint_states,head_rgb,left_arm_rgb"
-
-4. Specify output directory:
-   python3 custom_data_collection_example.py --output-dir ./my_data
-
-Available data sources:
-
-- joint_states: Joint states
-- head_rgb: Head RGB camera
-- left_arm_rgb: Left arm RGB camera
-- right_arm_rgb: Right arm RGB camera
-- head_depth: Head depth camera
-- imu: IMU sensor
-- odometry: Odometry
-- left_arm_end_pose: Left arm end pose
-- right_arm_end_pose: Right arm end pose
-
-**Functions:**
-
-- `create_minimal_data_sources()`: Create minimal data collection configuration (collect only joint states)
-- `create_full_data_sources()`: Create full data collection configuration
-- `create_vision_only_sources()`: Create vision-only data collection configuration
-
-**Usage:**
-
-```bash
-python3 custom_data_collection_example.py [options]
-```
-
----
-
 ## data_collection/collection_config.py
 
 Sensor Data Collection Configuration
@@ -150,7 +93,7 @@ robot = connect("x2://192.168.10.1:50051")
 # Use preset configuration
 collector = DataCollector(
     robot,
-    output_dir="./data",
+    output_dir="./collected_data",
     target_hz=30,
     collection_config=CollectionConfigPresets.full_manipulation()
 )
@@ -166,7 +109,7 @@ collector.stop_recording()
 
 Data Collection Example
 
-This script demonstrates how to use DataCollector to collect robot data
+This script demonstrates how to use DataCollector to collect robot data, colleted data is saved in ./collected_data directory.
 
 **Functions:**
 
@@ -224,26 +167,6 @@ Depth Point Cloud Example
 python3 depth_points.py --action single --server 192.168.10.1:50051
 # Stream read
 python3 depth_points.py --action stream --server 192.168.10.1:50051
-```
-
----
-
-## gripper_control.py
-
-Gripper Control Example
-
-**Functions:**
-
-- `move_gripper()`: Control gripper position
-- `stream_gripper_data()`: Get gripper joint state stream
-
-**Usage:**
-
-```bash
-# Get left gripper joint states
-python3 gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
-# Control left gripper
-python3 gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
 ```
 
 ---
@@ -329,9 +252,29 @@ python3 quanta_x1/arm_control.py --server 192.168.10.1:50051 --mode end_pose --a
 
 ---
 
+## quanta_x1/gripper_control.py
+
+Quanta_X1 Gripper Control Example, Do not use this example in other model
+
+**Functions:**
+
+- `move_gripper()`: Control gripper position
+- `stream_gripper_data()`: Get gripper joint state stream
+
+**Usage:**
+
+```bash
+# Get left gripper joint states
+python3 quanta_x1/gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
+# Control left gripper
+python3 quanta_x1/gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
+```
+
+---
+
 ## quanta_x1/lift_control.py
 
-Quanta X1 Lift Control Example, do not use this example for other models
+Quanta_X1 Lift Control Example, do not use this example for other models
 
 **Functions:**
 
@@ -376,6 +319,26 @@ python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode joint_pos --
 python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode joint_pos --arm left --action stream
 # Get right arm end pose stream
 python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode end_pose --arm right --action stream
+```
+
+---
+
+## quanta_x2/gripper_control.py
+
+Quanta_X2 Gripper Control Example, Do not use this example in other model
+
+**Functions:**
+
+- `move_gripper()`: Control gripper position
+- `stream_gripper_data()`: Get gripper joint position stream
+
+**Usage:**
+
+```bash
+# Get left gripper joint states
+python3 gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
+# Control left gripper
+python3 gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
 ```
 
 ---

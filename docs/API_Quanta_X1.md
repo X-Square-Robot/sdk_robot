@@ -18,6 +18,7 @@
    * [get_odometry_stream](#chassiscontroller-get_odometry_stream)
    * [get_pose_stream](#chassiscontroller-get_pose_stream)
    * [send_relative_pose_to_navigation](#chassiscontroller-send_relative_pose_to_navigation)
+   * [reset_navigation_chunk_id](#chassiscontroller-reset_navigation_chunk_id)
    * [set_trajectory_coord_system_mode](#chassiscontroller-set_trajectory_coord_system_mode)
 * [DepthPoints](#depthpoints)
    * [get_chassis_depth_points](#depthpoints-get_chassis_depth_points)
@@ -51,6 +52,7 @@
 * [LeftGripperController](#leftgrippercontroller)
    * [set_position](#leftgrippercontroller-set_position)
    * [get_position](#leftgrippercontroller-get_position)
+   * [get_position_stream](#leftgrippercontroller-get_position_stream)
    * [get_joint_states_stream](#leftgrippercontroller-get_joint_states_stream)
 * [LiftController](#liftcontroller)
    * [set_lift_position](#liftcontroller-set_lift_position)
@@ -89,14 +91,11 @@
 * [RightGripperController](#rightgrippercontroller)
    * [set_position](#rightgrippercontroller-set_position)
    * [get_position](#rightgrippercontroller-get_position)
+   * [get_position_stream](#rightgrippercontroller-get_position_stream)
    * [get_joint_states_stream](#rightgrippercontroller-get_joint_states_stream)
 * [RobotControl](#robotcontrol)
    * [set_manipulator_control_mode](#robotcontrol-set_manipulator_control_mode)
    * [get_manipulator_control_mode](#robotcontrol-get_manipulator_control_mode)
-* [State](#state)
-   * [heart_beat](#state-heart_beat)
-   * [get_all_joint_states](#state-get_all_joint_states)
-   * [get_all_joint_states_stream](#state-get_all_joint_states_stream)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
    * [emergency_stop](#system-emergency_stop)
@@ -148,6 +147,7 @@
 * [String](#message-std_msgsstring)
 * [ChassisControlModeParam](#message-xrsdkchassiscontrolmodeparam)
 * [ChassisPosition](#message-xrsdkchassisposition)
+* [ChassisPositionList](#message-xrsdkchassispositionlist)
 * [ChassisVelocity](#message-xrsdkchassisvelocity)
 * [CoordinateSystemModeParam](#message-xrsdkcoordinatesystemmodeparam)
 * [ExecutionResult](#message-xrsdkexecutionresult)
@@ -193,11 +193,11 @@ Set control mode: global position, relative position, or velocity control
 
 **Parameters:**
 
-* `chassis_control_mode_param` ([`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam)): Set control mode: global position, relative position, or velocity control
+* `chassis_control_mode_param` ([`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set control mode: global position, relative position, or velocity control
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -215,7 +215,7 @@ Get current control mode
 
 **Returns:**
 
-* [`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam): Get current control mode
+* [`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam)
 
 ---
 
@@ -229,11 +229,11 @@ Move to global position (must set GLOBAL mode first)
 
 **Parameters:**
 
-* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition)): Move to global position (must set GLOBAL mode first)
+* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Move to global position (must set GLOBAL mode first)
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -247,11 +247,11 @@ Move to relative position (must set RELATIVE mode and virtual zero point first)
 
 **Parameters:**
 
-* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition)): Move to relative position (must set RELATIVE mode and virtual zero point first)
+* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Move to relative position (must set RELATIVE mode and virtual zero point first)
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -265,11 +265,11 @@ Set velocity control (must set VELOCITY mode first)
 
 **Parameters:**
 
-* `chassis_velocity` ([`ChassisVelocity`](#message-xrsdkchassisvelocity)): Set velocity control (must set VELOCITY mode first)
+* `chassis_velocity` ([`ChassisVelocity`](#message-xrsdkchassisvelocity))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set velocity control (must set VELOCITY mode first)
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -283,11 +283,11 @@ Set virtual zero point (origin for relative movement)
 
 **Parameters:**
 
-* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition)): Set virtual zero point (origin for relative movement)
+* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set virtual zero point (origin for relative movement)
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -305,7 +305,7 @@ Get current virtual zero point setting
 
 **Returns:**
 
-* [`ChassisPosition`](#message-xrsdkchassisposition): Get current virtual zero point setting
+* [`ChassisPosition`](#message-xrsdkchassisposition)
 
 ---
 
@@ -323,7 +323,7 @@ Get current global position
 
 **Returns:**
 
-* [`ChassisPosition`](#message-xrsdkchassisposition): Get current global position
+* [`ChassisPosition`](#message-xrsdkchassisposition)
 
 ---
 
@@ -341,7 +341,7 @@ Get current relative position (relative to virtual zero point)
 
 **Returns:**
 
-* [`ChassisPosition`](#message-xrsdkchassisposition): Get current relative position (relative to virtual zero point)
+* [`ChassisPosition`](#message-xrsdkchassisposition)
 
 ---
 
@@ -415,15 +415,33 @@ Get pose stream
 def send_relative_pose_to_navigation(chassis_position_list: ChassisPositionList, timeout) -> ExecutionResult
 ```
 
-Send multiple relative positions to navigation system
+Send multiple relative positions to navigation system, used for data replay
 
 **Parameters:**
 
-* `chassis_position_list` (`ChassisPositionList`): Send multiple relative positions to navigation system
+* `chassis_position_list` ([`ChassisPositionList`](#message-xrsdkchassispositionlist))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Send multiple relative positions to navigation system
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="chassiscontroller-reset_navigation_chunk_id">reset_navigation_chunk_id</h4>
+
+```python
+def reset_navigation_chunk_id(timeout) -> ExecutionResult
+```
+
+reset_navigation_chunk_id to 0
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -437,11 +455,11 @@ Set trajectory coordinate system mode, default is map coordinate system, can be 
 
 **Parameters:**
 
-* `coordinate_system_mode_param` ([`CoordinateSystemModeParam`](#message-xrsdkcoordinatesystemmodeparam)): Set trajectory coordinate system mode, default is map coordinate system, can be set to odometry coordinate system
+* `coordinate_system_mode_param` ([`CoordinateSystemModeParam`](#message-xrsdkcoordinatesystemmodeparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set trajectory coordinate system mode, default is map coordinate system, can be set to odometry coordinate system
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -623,7 +641,7 @@ Get current head pose
 
 **Returns:**
 
-* [`HeadPose`](#message-xrsdkheadpose): Get current head pose
+* [`HeadPose`](#message-xrsdkheadpose)
 
 ---
 
@@ -633,7 +651,7 @@ Get current head pose
 def reset(timeout) -> ExecutionResult
 ```
 
-Reset arm to home position
+Reset head to center position
 
 **Parameters:**
 
@@ -641,7 +659,7 @@ Reset arm to home position
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Reset head to center position
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -651,7 +669,7 @@ Reset arm to home position
 def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
-Get joint state stream
+Get Joint state stream
 
 **Parameters:**
 
@@ -827,7 +845,7 @@ For Quanta_X1
 def get_joint_states(timeout) -> _sensor_msgs__.JointState
 ```
 
-Get joint states
+Get joint states (positions, velocities, efforts)
 
 **Parameters:**
 
@@ -850,7 +868,7 @@ Get joint states
 def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
 ```
 
-Get End Pose
+Get end effector pose
 
 **Parameters:**
 
@@ -878,7 +896,7 @@ Reset arm to home position
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Reset arm to home position
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -888,7 +906,7 @@ Reset arm to home position
 def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
-Get joint state stream
+Get joint states stream
 
 **Parameters:**
 
@@ -911,7 +929,7 @@ Get joint state stream
 def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 ```
 
-Get End Pose stream
+Get end pose stream
 
 **Parameters:**
 
@@ -1009,7 +1027,25 @@ Get current gripper state
 
 **Returns:**
 
-* [`GripperPosition`](#message-xrsdkgripperposition): Get current gripper state
+* [`GripperPosition`](#message-xrsdkgripperposition)
+
+---
+
+<h4 id="leftgrippercontroller-get_position_stream">get_position_stream</h4>
+
+```python
+def get_position_stream(timeout) -> Iterator[GripperPosition]
+```
+
+Get position stream
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: Stream of GripperPosition
 
 ---
 
@@ -1019,7 +1055,7 @@ Get current gripper state
 def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
-Get joint state stream
+Get Joint state stream
 
 **Parameters:**
 
@@ -1038,7 +1074,7 @@ Get joint state stream
 
 <h3 id="liftcontroller">LiftController</h3>
 
-Lift controller service (CX001 and EX001 only)
+Lift controller service ( quanta_x1 only)
 
 <h4 id="liftcontroller-set_lift_position">set_lift_position</h4>
 
@@ -1075,7 +1111,7 @@ Get lift position
 
 **Returns:**
 
-* [`LiftPosition`](#message-xrsdkliftposition): Get lift position
+* [`LiftPosition`](#message-xrsdkliftposition)
 
 ---
 
@@ -1085,7 +1121,7 @@ Get lift position
 def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
-Get joint state stream
+Get Joint state stream
 
 **Parameters:**
 
@@ -1250,7 +1286,7 @@ Start mapping
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Start mapping
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1264,11 +1300,11 @@ Stop and save mapping
 
 **Parameters:**
 
-* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam)): Stop and save mapping
+* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Stop and save mapping
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1282,11 +1318,11 @@ Set navigation mode (enable/disable built-in navigation algorithm)
 
 **Parameters:**
 
-* `navigation_mode_param` ([`NavigationModeParam`](#message-xrsdknavigationmodeparam)): Set navigation mode (enable/disable built-in navigation algorithm)
+* `navigation_mode_param` ([`NavigationModeParam`](#message-xrsdknavigationmodeparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set navigation mode (enable/disable built-in navigation algorithm)
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1300,11 +1336,11 @@ Start localization
 
 **Parameters:**
 
-* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam)): Start localization
+* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Start localization
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1322,7 +1358,7 @@ Stop localization
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Stop localization
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1462,7 +1498,9 @@ For Quanta_X1
 def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
 ```
 
-Control end effector pose (must set END_POSE mode first) Supports position and orientation control
+Control end effector pose (must set END_POSE mode first)
+
+Supports position and orientation control
 
 **Parameters:**
 
@@ -1481,7 +1519,7 @@ Control end effector pose (must set END_POSE mode first) Supports position and o
 def get_joint_states(timeout) -> _sensor_msgs__.JointState
 ```
 
-Get joint states
+Get joint states (positions, velocities, efforts)
 
 **Parameters:**
 
@@ -1504,7 +1542,7 @@ Get joint states
 def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
 ```
 
-Get End Pose
+Get end effector pose
 
 **Parameters:**
 
@@ -1532,7 +1570,7 @@ Reset arm to home position
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Reset arm to home position
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1542,7 +1580,7 @@ Reset arm to home position
 def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
-Get joint state stream
+Get joint states stream
 
 **Parameters:**
 
@@ -1565,7 +1603,7 @@ Get joint state stream
 def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 ```
 
-Get End Pose stream
+Get end pose stream
 
 **Parameters:**
 
@@ -1663,7 +1701,25 @@ Get current gripper state
 
 **Returns:**
 
-* [`GripperPosition`](#message-xrsdkgripperposition): Get current gripper state
+* [`GripperPosition`](#message-xrsdkgripperposition)
+
+---
+
+<h4 id="rightgrippercontroller-get_position_stream">get_position_stream</h4>
+
+```python
+def get_position_stream(timeout) -> Iterator[GripperPosition]
+```
+
+Get position stream
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: Stream of GripperPosition
 
 ---
 
@@ -1673,7 +1729,7 @@ Get current gripper state
 def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
-Get joint state stream
+Get Joint state stream
 
 **Parameters:**
 
@@ -1702,11 +1758,11 @@ Set control mode for Manipulator (Arm and Waist): joint positions control or end
 
 **Parameters:**
 
-* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)): Set control mode for Manipulator (Arm and Waist): joint positions control or end pose control
+* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set control mode for Manipulator (Arm and Waist): joint positions control or end pose control
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1724,73 +1780,7 @@ Get current control mode for Manipulator
 
 **Returns:**
 
-* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam): Get current control mode for Manipulator
-
----
-
-<h3 id="state">State</h3>
-
-<h4 id="state-heart_beat">heart_beat</h4>
-
-```python
-def heart_beat(heart_beat_request: HeartBeatRequest, timeout) -> HeartBeatResponse
-```
-
-Heartbeat for SDK mode client tracking (Internal use)
-
-**Parameters:**
-
-* `heart_beat_request` (`HeartBeatRequest`): Heartbeat for SDK mode client tracking (Internal use)
-
-**Returns:**
-
-* `HeartBeatResponse`: Heartbeat for SDK mode client tracking (Internal use)
-
----
-
-<h4 id="state-get_all_joint_states">get_all_joint_states</h4>
-
-```python
-def get_all_joint_states(timeout) -> _sensor_msgs__.JointState
-```
-
-Get all joint states
-
-**Parameters:**
-
-* No parameters
-
-**Returns:**
-
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
-
----
-
-<h4 id="state-get_all_joint_states_stream">get_all_joint_states_stream</h4>
-
-```python
-def get_all_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
-```
-
-Get all joint states stream
-
-**Parameters:**
-
-* No parameters
-
-**Returns:**
-
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)
 
 ---
 
@@ -1802,15 +1792,15 @@ Get all joint states stream
 def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 ```
 
-Set Robot work mode: IDLE, INFERE, COLLECT, SDK
+Set Robot work mode: IDLE, INFERE, COLLECT, SDK, only support SDK mode for now.
 
 **Parameters:**
 
-* `robot_mode_param` ([`RobotModeParam`](#message-xrsdkrobotmodeparam)): Set Robot work mode: IDLE, INFERE, COLLECT, SDK
+* `robot_mode_param` ([`RobotModeParam`](#message-xrsdkrobotmodeparam))
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Set Robot work mode: IDLE, INFERE, COLLECT, SDK
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1828,7 +1818,7 @@ Emergency stop, call carefully
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Emergency stop, call carefully
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1846,7 +1836,7 @@ Get Robot system info
 
 **Returns:**
 
-* [`RobotStaticInfo`](#message-xrsdkrobotstaticinfo): Get Robot system info
+* [`RobotStaticInfo`](#message-xrsdkrobotstaticinfo)
 
 ---
 
@@ -1864,7 +1854,7 @@ Get Robot runtime info
 
 **Returns:**
 
-* [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo): Get Robot runtime info
+* [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo)
 
 ---
 
@@ -1882,7 +1872,7 @@ Heartbeat for SDK mode client tracking
 
 **Returns:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): Heartbeat for SDK mode client tracking
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -2496,6 +2486,18 @@ Heartbeat for SDK mode client tracking
 
 ---
 
+<a id="message-xrsdkchassispositionlist"></a>
+#### ChassisPositionList
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `chunk_id` | `int32` (optional) | chunk_id is used to identify the chunk of the positions. optional, if not set, use self-incremented id.<br>navigation system will use chunk_id 0 as the start position. |
+| `positions` | List[[`ChassisPosition`](#message-xrsdkchassisposition)] |  |
+
+---
+
 <a id="message-xrsdkchassisvelocity"></a>
 #### ChassisVelocity
 
@@ -2629,8 +2631,8 @@ Heartbeat for SDK mode client tracking
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `is_charging` | `bool` |  |
-| `value` | `float` |  |
+| `is_charging` | `bool` | Whether the robot is charging |
+| `value` | `float` | Battery level |
 
 ---
 
@@ -2733,51 +2735,50 @@ Heartbeat for SDK mode client tracking
 | `INT32` (5) |  |
 | `UINT32` (6) |  |
 | `FLOAT32` (7) |  |
+| `FLOAT64` (8) |  |
 
 ---
 
 <a id="enum-xrsdkchassiscontrolmode"></a>
 #### ChassisControlMode
 
-Global absolute position control relative to map coordinate system. Map coordinate system varies by scenario, rarely used in practice.
-
 | Value | Description |
 |-------|-------------|
 | `GLOBAL` (0) | Global absolute position control relative to map coordinate system. Map coordinate system varies by scenario, rarely used in practice. |
 | `RELATIVE` (1) | Relative position control (RECOMMENDED!!!), relative to a virtual zero point that must be set via API. |
+| `VELOCITY` (2) | Direct velocity control, requires disabling chassis position planner in advance. |
 
 ---
 
 <a id="enum-xrsdkcoordinatesystemmode"></a>
 #### CoordinateSystemMode
 
-Coordinate system is map coordinate system
+map coordinate system is used for map based navigation. need to set this mode before navigation.
 
 | Value | Description |
 |-------|-------------|
-| `COORDINATE_SYSTEM_MODE_MAP` (0) | Coordinate system is map coordinate system |
+| `COORDINATE_SYSTEM_MODE_MAP` (0) | map coordinate system is used for map based navigation. need to set this mode before navigation. |
+| `COORDINATE_SYSTEM_MODE_ODOMETRY` (1) | odometry coordinate system is used for data replay when map is not built. need to set this mode before data replay. |
 
 ---
 
 <a id="enum-xrsdkmanipulatorcontrolmode"></a>
 #### ManipulatorControlMode
 
-End pose control mode for manipulator(Arm and Waist)
-
 | Value | Description |
 |-------|-------------|
 | `MANIPULATOR_END_POSE` (0) | End pose control mode for manipulator(Arm and Waist) |
+| `MANIPULATOR_JOINT_POSITIONS` (1) | Joint positions control mode for manipulator(Arm and Waist) |
 
 ---
 
 <a id="enum-xrsdknavigationmode"></a>
 #### NavigationMode
 
-Enable built-in navigation
-
 | Value | Description |
 |-------|-------------|
 | `BUILT_IN_NAVIGATION` (0) | Enable built-in navigation |
+| `USER_CUSTOM_NAVIGATION` (1) | Disable built-in navigation |
 
 ---
 
@@ -2789,18 +2790,18 @@ Enable built-in navigation
 | `CX001` (0) |  |
 | `CX002` (1) |  |
 | `EX001` (2) |  |
+| `INVALID_MODEL` (255) |  |
 
 ---
 
 <a id="enum-xrsdkrobotworkmode"></a>
 #### RobotWorkMode
 
-Robot is idle
-
 | Value | Description |
 |-------|-------------|
-| `IDLE` (0) | Robot is idle |
-| `INFERE` (1) | Robot is in inference mode |
-| `COLLECT` (2) | Robot is in collect mode |
+| `IDLE` (0) | Robot is idle, not support this mode for now. |
+| `INFERE` (1) | Robot is in inference mode, not support this mode for now. |
+| `COLLECT` (2) | Robot is in collect mode, not support this mode for now. |
+| `SDK` (3) | Robot is in SDK mode, only support this mode for now. |
 
 ---

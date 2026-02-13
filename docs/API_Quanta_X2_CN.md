@@ -18,6 +18,7 @@
    * [get_odometry_stream](#chassiscontroller-get_odometry_stream)
    * [get_pose_stream](#chassiscontroller-get_pose_stream)
    * [send_relative_pose_to_navigation](#chassiscontroller-send_relative_pose_to_navigation)
+   * [reset_navigation_chunk_id](#chassiscontroller-reset_navigation_chunk_id)
    * [set_trajectory_coord_system_mode](#chassiscontroller-set_trajectory_coord_system_mode)
 * [DepthPoints](#depthpoints)
    * [get_chassis_depth_points](#depthpoints-get_chassis_depth_points)
@@ -49,12 +50,10 @@
 * [LeftGripperController](#leftgrippercontroller)
    * [set_position](#leftgrippercontroller-set_position)
    * [get_position](#leftgrippercontroller-get_position)
-   * [get_joint_states_stream](#leftgrippercontroller-get_joint_states_stream)
-* [LeftHandController](#lefthandcontroller)
-   * [set_joint_positions](#lefthandcontroller-set_joint_positions)
-   * [get_joint_states](#lefthandcontroller-get_joint_states)
-   * [reset](#lefthandcontroller-reset)
-   * [get_joint_states_stream](#lefthandcontroller-get_joint_states_stream)
+   * [get_position_stream](#leftgrippercontroller-get_position_stream)
+* [LeftGripperTactile](#leftgrippertactile)
+   * [get_tactile_sensor_data](#leftgrippertactile-get_tactile_sensor_data)
+   * [get_tactile_sensor_data_stream](#leftgrippertactile-get_tactile_sensor_data_stream)
 * [Navigation](#navigation)
    * [start_mapping](#navigation-start_mapping)
    * [stop_mapping](#navigation-stop_mapping)
@@ -78,19 +77,13 @@
 * [RightGripperController](#rightgrippercontroller)
    * [set_position](#rightgrippercontroller-set_position)
    * [get_position](#rightgrippercontroller-get_position)
-   * [get_joint_states_stream](#rightgrippercontroller-get_joint_states_stream)
-* [RightHandController](#righthandcontroller)
-   * [set_joint_positions](#righthandcontroller-set_joint_positions)
-   * [get_joint_states](#righthandcontroller-get_joint_states)
-   * [reset](#righthandcontroller-reset)
-   * [get_joint_states_stream](#righthandcontroller-get_joint_states_stream)
+   * [get_position_stream](#rightgrippercontroller-get_position_stream)
+* [RightGripperTactile](#rightgrippertactile)
+   * [get_tactile_sensor_data](#rightgrippertactile-get_tactile_sensor_data)
+   * [get_tactile_sensor_data_stream](#rightgrippertactile-get_tactile_sensor_data_stream)
 * [RobotControl](#robotcontrol)
    * [set_manipulator_control_mode](#robotcontrol-set_manipulator_control_mode)
    * [get_manipulator_control_mode](#robotcontrol-get_manipulator_control_mode)
-* [State](#state)
-   * [heart_beat](#state-heart_beat)
-   * [get_all_joint_states](#state-get_all_joint_states)
-   * [get_all_joint_states_stream](#state-get_all_joint_states_stream)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
    * [emergency_stop](#system-emergency_stop)
@@ -146,6 +139,7 @@
 * [String](#message-std_msgsstring)
 * [ChassisControlModeParam](#message-xrsdkchassiscontrolmodeparam)
 * [ChassisPosition](#message-xrsdkchassisposition)
+* [ChassisPositionList](#message-xrsdkchassispositionlist)
 * [ChassisVelocity](#message-xrsdkchassisvelocity)
 * [CoordinateSystemModeParam](#message-xrsdkcoordinatesystemmodeparam)
 * [ExecutionResult](#message-xrsdkexecutionresult)
@@ -191,11 +185,11 @@ def set_control_mode(chassis_control_mode_param: ChassisControlModeParam, timeou
 
 **参数:**
 
-* `chassis_control_mode_param` ([`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam)): 设置控制模式：全局位置、相对位置或速度控制
+* `chassis_control_mode_param` ([`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置控制模式：全局位置、相对位置或速度控制
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -213,7 +207,7 @@ def get_control_mode(timeout) -> ChassisControlModeParam
 
 **返回:**
 
-* [`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam): 获取当前控制模式
+* [`ChassisControlModeParam`](#message-xrsdkchassiscontrolmodeparam)
 
 ---
 
@@ -227,11 +221,11 @@ def move_to_global_position(chassis_position: ChassisPosition, timeout) -> Execu
 
 **参数:**
 
-* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition)): 移动到全局位置（必须先设置GLOBAL模式）
+* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 移动到全局位置（必须先设置GLOBAL模式）
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -245,11 +239,11 @@ def move_to_relative_position(chassis_position: ChassisPosition, timeout) -> Exe
 
 **参数:**
 
-* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition)): 移动到相对位置（必须先设置RELATIVE模式和虚拟零点）
+* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 移动到相对位置（必须先设置RELATIVE模式和虚拟零点）
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -263,11 +257,11 @@ def set_velocity(chassis_velocity: ChassisVelocity, timeout) -> ExecutionResult
 
 **参数:**
 
-* `chassis_velocity` ([`ChassisVelocity`](#message-xrsdkchassisvelocity)): 设置速度控制（必须先设置VELOCITY模式）
+* `chassis_velocity` ([`ChassisVelocity`](#message-xrsdkchassisvelocity))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置速度控制（必须先设置VELOCITY模式）
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -281,11 +275,11 @@ def set_virtual_zero_point(chassis_position: ChassisPosition, timeout) -> Execut
 
 **参数:**
 
-* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition)): 设置虚拟零点（相对运动的原点）
+* `chassis_position` ([`ChassisPosition`](#message-xrsdkchassisposition))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置虚拟零点（相对运动的原点）
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -303,7 +297,7 @@ def get_virtual_zero_point(timeout) -> ChassisPosition
 
 **返回:**
 
-* [`ChassisPosition`](#message-xrsdkchassisposition): 获取当前虚拟零点设置
+* [`ChassisPosition`](#message-xrsdkchassisposition)
 
 ---
 
@@ -321,7 +315,7 @@ def get_global_position(timeout) -> ChassisPosition
 
 **返回:**
 
-* [`ChassisPosition`](#message-xrsdkchassisposition): 获取当前全局位置
+* [`ChassisPosition`](#message-xrsdkchassisposition)
 
 ---
 
@@ -339,7 +333,7 @@ def get_relative_position(timeout) -> ChassisPosition
 
 **返回:**
 
-* [`ChassisPosition`](#message-xrsdkchassisposition): 获取当前相对位置（相对于虚拟零点）
+* [`ChassisPosition`](#message-xrsdkchassisposition)
 
 ---
 
@@ -413,15 +407,33 @@ def get_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 def send_relative_pose_to_navigation(chassis_position_list: ChassisPositionList, timeout) -> ExecutionResult
 ```
 
-向导航系统发送多个相对位置
+向导航系统发送多个相对位置，用于数据回放
 
 **参数:**
 
-* `chassis_position_list` (`ChassisPositionList`): 向导航系统发送多个相对位置
+* `chassis_position_list` ([`ChassisPositionList`](#message-xrsdkchassispositionlist))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 向导航系统发送多个相对位置
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="chassiscontroller-reset_navigation_chunk_id">reset_navigation_chunk_id</h4>
+
+```python
+def reset_navigation_chunk_id(timeout) -> ExecutionResult
+```
+
+将导航chunk_id重置为0
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -435,11 +447,11 @@ def set_trajectory_coord_system_mode(coordinate_system_mode_param: CoordinateSys
 
 **参数:**
 
-* `coordinate_system_mode_param` ([`CoordinateSystemModeParam`](#message-xrsdkcoordinatesystemmodeparam)): 设置轨迹坐标系模式，默认为地图坐标系，可设置为里程计坐标系
+* `coordinate_system_mode_param` ([`CoordinateSystemModeParam`](#message-xrsdkcoordinatesystemmodeparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置轨迹坐标系模式，默认为地图坐标系，可设置为里程计坐标系
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -621,7 +633,7 @@ def get_pose(timeout) -> HeadPose
 
 **返回:**
 
-* [`HeadPose`](#message-xrsdkheadpose): 获取当前头部位姿
+* [`HeadPose`](#message-xrsdkheadpose)
 
 ---
 
@@ -631,7 +643,7 @@ def get_pose(timeout) -> HeadPose
 def reset(timeout) -> ExecutionResult
 ```
 
-重置机械臂到初始位置
+重置头部到中心位置
 
 **参数:**
 
@@ -639,7 +651,7 @@ def reset(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 重置头部到中心位置
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -825,7 +837,7 @@ Quanta_X1机型
 def get_joint_states(timeout) -> _sensor_msgs__.JointState
 ```
 
-获取关节状态
+获取关节状态（位置、速度、力矩）
 
 **参数:**
 
@@ -848,7 +860,7 @@ def get_joint_states(timeout) -> _sensor_msgs__.JointState
 def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
 ```
 
-获取末端位姿
+获取末端执行器位姿
 
 **参数:**
 
@@ -876,7 +888,7 @@ def reset(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 重置机械臂到初始位置
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -967,17 +979,17 @@ def get_position(timeout) -> GripperPosition
 
 **返回:**
 
-* [`GripperPosition`](#message-xrsdkgripperposition): 获取当前夹爪状态
+* [`GripperPosition`](#message-xrsdkgripperposition)
 
 ---
 
-<h4 id="leftgrippercontroller-get_joint_states_stream">get_joint_states_stream</h4>
+<h4 id="leftgrippercontroller-get_position_stream">get_position_stream</h4>
 
 ```python
-def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
+def get_position_stream(timeout) -> Iterator[GripperPosition]
 ```
 
-获取关节状态流
+Get position stream
 
 **参数:**
 
@@ -985,44 +997,17 @@ def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 
 **返回:**
 
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: GripperPosition 流
 
 ---
 
-<h3 id="lefthandcontroller">LeftHandController</h3>
+<h3 id="leftgrippertactile">LeftGripperTactile</h3>
 
-左手控制器服务
-
-<h4 id="lefthandcontroller-set_joint_positions">set_joint_positions</h4>
+<h4 id="leftgrippertactile-get_tactile_sensor_data">get_tactile_sensor_data</h4>
 
 ```python
-def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
+def get_tactile_sensor_data(timeout) -> TactileSensorData
 ```
-
-Control joint angles in radians Hand joint is fixed, 15 joints in total, each finger is 3 joints joint name is as follows, 15 joints, in radians
-
-**参数:**
-
-* `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
-
-**返回:**
-
-* [`ExecutionResult`](#message-xrsdkexecutionresult)
-
----
-
-<h4 id="lefthandcontroller-get_joint_states">get_joint_states</h4>
-
-```python
-def get_joint_states(timeout) -> _sensor_msgs__.JointState
-```
-
-获取关节状态
 
 **参数:**
 
@@ -1030,22 +1015,15 @@ def get_joint_states(timeout) -> _sensor_msgs__.JointState
 
 **返回:**
 
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* [`TactileSensorData`](#message-xrsdktactilesensordata)
 
 ---
 
-<h4 id="lefthandcontroller-reset">reset</h4>
+<h4 id="leftgrippertactile-get_tactile_sensor_data_stream">get_tactile_sensor_data_stream</h4>
 
 ```python
-def reset(timeout) -> ExecutionResult
+def get_tactile_sensor_data_stream(timeout) -> Iterator[TactileSensorData]
 ```
-
-重置机械臂到初始位置
 
 **参数:**
 
@@ -1053,30 +1031,7 @@ def reset(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 重置机械臂到初始位置
-
----
-
-<h4 id="lefthandcontroller-get_joint_states_stream">get_joint_states_stream</h4>
-
-```python
-def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
-```
-
-获取关节状态流
-
-**参数:**
-
-* 无参数
-
-**返回:**
-
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* `Iterator[[`TactileSensorData`](#message-xrsdktactilesensordata)]`: TactileSensorData 流
 
 ---
 
@@ -1096,7 +1051,7 @@ def start_mapping(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 开始建图
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1110,11 +1065,11 @@ def stop_mapping(save_map_param: SaveMapParam, timeout) -> ExecutionResult
 
 **参数:**
 
-* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam)): 停止并保存建图
+* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 停止并保存建图
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1128,11 +1083,11 @@ def set_navigation_mode(navigation_mode_param: NavigationModeParam, timeout) -> 
 
 **参数:**
 
-* `navigation_mode_param` ([`NavigationModeParam`](#message-xrsdknavigationmodeparam)): 设置导航模式（启用/禁用内置导航算法）
+* `navigation_mode_param` ([`NavigationModeParam`](#message-xrsdknavigationmodeparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置导航模式（启用/禁用内置导航算法）
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1146,11 +1101,11 @@ def start_localization(save_map_param: SaveMapParam, timeout) -> ExecutionResult
 
 **参数:**
 
-* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam)): 开始定位
+* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 开始定位
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1168,7 +1123,7 @@ def stop_localization(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 停止定位
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1308,7 +1263,9 @@ Quanta_X1机型
 def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
 ```
 
-控制末端执行器位姿（必须先设置END_POSE模式） 支持位置和姿态控制
+控制末端执行器位姿（必须先设置END_POSE模式）
+
+支持位置和姿态控制
 
 **参数:**
 
@@ -1327,7 +1284,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 def get_joint_states(timeout) -> _sensor_msgs__.JointState
 ```
 
-获取关节状态
+获取关节状态（位置、速度、力矩）
 
 **参数:**
 
@@ -1350,7 +1307,7 @@ def get_joint_states(timeout) -> _sensor_msgs__.JointState
 def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
 ```
 
-获取末端位姿
+获取末端执行器位姿
 
 **参数:**
 
@@ -1378,7 +1335,7 @@ def reset(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 重置机械臂到初始位置
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1469,17 +1426,17 @@ def get_position(timeout) -> GripperPosition
 
 **返回:**
 
-* [`GripperPosition`](#message-xrsdkgripperposition): 获取当前夹爪状态
+* [`GripperPosition`](#message-xrsdkgripperposition)
 
 ---
 
-<h4 id="rightgrippercontroller-get_joint_states_stream">get_joint_states_stream</h4>
+<h4 id="rightgrippercontroller-get_position_stream">get_position_stream</h4>
 
 ```python
-def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
+def get_position_stream(timeout) -> Iterator[GripperPosition]
 ```
 
-获取关节状态流
+Get position stream
 
 **参数:**
 
@@ -1487,44 +1444,17 @@ def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 
 **返回:**
 
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: GripperPosition 流
 
 ---
 
-<h3 id="righthandcontroller">RightHandController</h3>
+<h3 id="rightgrippertactile">RightGripperTactile</h3>
 
-右手控制器服务
-
-<h4 id="righthandcontroller-set_joint_positions">set_joint_positions</h4>
+<h4 id="rightgrippertactile-get_tactile_sensor_data">get_tactile_sensor_data</h4>
 
 ```python
-def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
+def get_tactile_sensor_data(timeout) -> TactileSensorData
 ```
-
-Control joint angles in radians Hand joint is fixed, 15 joints in total, each finger is 3 joints
-
-**参数:**
-
-* `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
-
-**返回:**
-
-* [`ExecutionResult`](#message-xrsdkexecutionresult)
-
----
-
-<h4 id="righthandcontroller-get_joint_states">get_joint_states</h4>
-
-```python
-def get_joint_states(timeout) -> _sensor_msgs__.JointState
-```
-
-获取关节状态
 
 **参数:**
 
@@ -1532,22 +1462,15 @@ def get_joint_states(timeout) -> _sensor_msgs__.JointState
 
 **返回:**
 
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* [`TactileSensorData`](#message-xrsdktactilesensordata)
 
 ---
 
-<h4 id="righthandcontroller-reset">reset</h4>
+<h4 id="rightgrippertactile-get_tactile_sensor_data_stream">get_tactile_sensor_data_stream</h4>
 
 ```python
-def reset(timeout) -> ExecutionResult
+def get_tactile_sensor_data_stream(timeout) -> Iterator[TactileSensorData]
 ```
-
-重置机械臂到初始位置
 
 **参数:**
 
@@ -1555,30 +1478,7 @@ def reset(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 重置机械臂到初始位置
-
----
-
-<h4 id="righthandcontroller-get_joint_states_stream">get_joint_states_stream</h4>
-
-```python
-def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
-```
-
-获取关节状态流
-
-**参数:**
-
-* 无参数
-
-**返回:**
-
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* `Iterator[[`TactileSensorData`](#message-xrsdktactilesensordata)]`: TactileSensorData 流
 
 ---
 
@@ -1594,11 +1494,11 @@ def set_manipulator_control_mode(manipulator_control_mode_param: ManipulatorCont
 
 **参数:**
 
-* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)): 设置机械臂（手臂和腰部）的控制模式：关节位置控制或末端位姿控制
+* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置机械臂（手臂和腰部）的控制模式：关节位置控制或末端位姿控制
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1616,73 +1516,7 @@ def get_manipulator_control_mode(timeout) -> ManipulatorControlModeParam
 
 **返回:**
 
-* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam): 获取机械臂的当前控制模式
-
----
-
-<h3 id="state">State</h3>
-
-<h4 id="state-heart_beat">heart_beat</h4>
-
-```python
-def heart_beat(heart_beat_request: HeartBeatRequest, timeout) -> HeartBeatResponse
-```
-
-Heartbeat for SDK mode client tracking (Internal use)
-
-**参数:**
-
-* `heart_beat_request` (`HeartBeatRequest`): Heartbeat for SDK mode client tracking (Internal use)
-
-**返回:**
-
-* `HeartBeatResponse`: Heartbeat for SDK mode client tracking (Internal use)
-
----
-
-<h4 id="state-get_all_joint_states">get_all_joint_states</h4>
-
-```python
-def get_all_joint_states(timeout) -> _sensor_msgs__.JointState
-```
-
-获取所有关节状态
-
-**参数:**
-
-* 无参数
-
-**返回:**
-
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
-
----
-
-<h4 id="state-get_all_joint_states_stream">get_all_joint_states_stream</h4>
-
-```python
-def get_all_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
-```
-
-获取所有关节状态流
-
-**参数:**
-
-* 无参数
-
-**返回:**
-
-* [`JointState`](#message-sensor_msgsjointstate)
-   * `header` ([`Header`](#message-std_msgsheader))
-   * `name` (List[`string`])
-   * `position` (List[`double`])
-   * `velocity` (List[`double`])
-   * `effort` (List[`double`])
+* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)
 
 ---
 
@@ -1694,15 +1528,15 @@ def get_all_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 ```
 
-设置机器人工作模式：IDLE, INFERE, COLLECT, SDK
+设置机器人工作模式：IDLE, INFERE, COLLECT, SDK, 目前仅支持SDK模式。
 
 **参数:**
 
-* `robot_mode_param` ([`RobotModeParam`](#message-xrsdkrobotmodeparam)): 设置机器人工作模式：IDLE, INFERE, COLLECT, SDK
+* `robot_mode_param` ([`RobotModeParam`](#message-xrsdkrobotmodeparam))
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 设置机器人工作模式：IDLE, INFERE, COLLECT, SDK
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1720,7 +1554,7 @@ def emergency_stop(timeout) -> ExecutionResult
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): 紧急停止，请谨慎调用
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -1738,7 +1572,7 @@ def get_static_info(timeout) -> RobotStaticInfo
 
 **返回:**
 
-* [`RobotStaticInfo`](#message-xrsdkrobotstaticinfo): 获取机器人系统信息
+* [`RobotStaticInfo`](#message-xrsdkrobotstaticinfo)
 
 ---
 
@@ -1756,7 +1590,7 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 **返回:**
 
-* [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo): 获取机器人运行时信息
+* [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo)
 
 ---
 
@@ -1774,7 +1608,7 @@ SDK模式客户端跟踪的心跳
 
 **返回:**
 
-* [`ExecutionResult`](#message-xrsdkexecutionresult): SDK模式客户端跟踪的心跳
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -2473,6 +2307,18 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 ---
 
+<a id="message-xrsdkchassispositionlist"></a>
+#### ChassisPositionList
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `chunk_id` | `int32` (optional) | chunk_id用于标识位置块。可选，如果未设置，使用自增id。<br>导航系统将chunk_id 0作为起始位置。 |
+| `positions` | List[[`ChassisPosition`](#message-xrsdkchassisposition)] |  |
+
+---
+
 <a id="message-xrsdkchassisvelocity"></a>
 #### ChassisVelocity
 
@@ -2606,8 +2452,8 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 | 字段 | 类型 | 说明 |
 |------|------|--------|
-| `is_charging` | `bool` |  |
-| `value` | `float` |  |
+| `is_charging` | `bool` | 机器人是否正在充电 |
+| `value` | `float` | 电池电量 |
 
 ---
 
@@ -2710,51 +2556,50 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 | `INT32` (5) |  |
 | `UINT32` (6) |  |
 | `FLOAT32` (7) |  |
+| `FLOAT64` (8) |  |
 
 ---
 
 <a id="enum-xrsdkchassiscontrolmode"></a>
 #### ChassisControlMode
 
-全局绝对位置控制，相对于地图坐标系。地图坐标系因场景而异，实际使用中很少使用。
-
 | 值 | 说明 |
 |------|--------|
 | `GLOBAL` (0) | 全局绝对位置控制，相对于地图坐标系。地图坐标系因场景而异，实际使用中很少使用。 |
 | `RELATIVE` (1) | 相对位置控制（推荐！！！），相对于必须通过API设置的虚拟零点。 |
+| `VELOCITY` (2) | 直接速度控制，需要提前禁用底盘位置规划器。 |
 
 ---
 
 <a id="enum-xrsdkcoordinatesystemmode"></a>
 #### CoordinateSystemMode
 
-坐标系是地图坐标系
+地图坐标系用于基于地图的导航。需在导航前设置此模式。
 
 | 值 | 说明 |
 |------|--------|
-| `COORDINATE_SYSTEM_MODE_MAP` (0) | 坐标系是地图坐标系 |
+| `COORDINATE_SYSTEM_MODE_MAP` (0) | 地图坐标系用于基于地图的导航。需在导航前设置此模式。 |
+| `COORDINATE_SYSTEM_MODE_ODOMETRY` (1) | 里程计坐标系用于未建图时的数据回放。需在数据回放前设置此模式。 |
 
 ---
 
 <a id="enum-xrsdkmanipulatorcontrolmode"></a>
 #### ManipulatorControlMode
 
-机械臂（手臂和腰部）的末端位姿控制模式
-
 | 值 | 说明 |
 |------|--------|
 | `MANIPULATOR_END_POSE` (0) | 机械臂（手臂和腰部）的末端位姿控制模式 |
+| `MANIPULATOR_JOINT_POSITIONS` (1) | 机械臂（手臂和腰部）的关节位置控制模式 |
 
 ---
 
 <a id="enum-xrsdknavigationmode"></a>
 #### NavigationMode
 
-启用内置导航
-
 | 值 | 说明 |
 |------|--------|
 | `BUILT_IN_NAVIGATION` (0) | 启用内置导航 |
+| `USER_CUSTOM_NAVIGATION` (1) | 禁用内置导航 |
 
 ---
 
@@ -2766,18 +2611,18 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 | `CX001` (0) |  |
 | `CX002` (1) |  |
 | `EX001` (2) |  |
+| `INVALID_MODEL` (255) |  |
 
 ---
 
 <a id="enum-xrsdkrobotworkmode"></a>
 #### RobotWorkMode
 
-机器人处于空闲状态
-
 | 值 | 说明 |
 |------|--------|
-| `IDLE` (0) | 机器人处于空闲状态 |
-| `INFERE` (1) | 机器人处于推理模式 |
-| `COLLECT` (2) | 机器人处于采集模式 |
+| `IDLE` (0) | 机器人处于空闲状态，目前不支持此模式。 |
+| `INFERE` (1) | 机器人处于推理模式，目前不支持此模式。 |
+| `COLLECT` (2) | 机器人处于采集模式，目前不支持此模式。 |
+| `SDK` (3) | 机器人处于SDK模式，目前仅支持此模式。 |
 
 ---
