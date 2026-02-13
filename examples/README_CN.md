@@ -69,63 +69,6 @@ python check_connect.py  --server 192.168.10.1:50051
 
 ---
 
-## custom_data_collection_example.py
-
-完全自定义数据采集示例
-
-这个脚本展示了如何完全手动控制数据采集，不使用任何封装层。
-用户直接指定要采集的数据类型，完全控制采集过程。
-
-主要特点:
-
-- 完全手动控制采集的数据类型
-- 不依赖任何配置类
-- 直接调用机器人接口
-- 自定义数据格式和存储逻辑
-- 灵活的采集控制
-
-使用方法:
-
-1. 基本使用：
-   python3 custom_data_collection_example.py
-
-2. 指定配置：
-   python3 custom_data_collection_example.py --config minimal    # 只采集关节状态
-   python3 custom_data_collection_example.py --config vision     # 只采集视觉数据
-   python3 custom_data_collection_example.py --config full       # 采集所有数据
-
-3. 自定义数据源：
-   python3 custom_data_collection_example.py --config "joint_states,head_rgb,left_arm_rgb"
-
-4. 指定输出目录：
-   python3 custom_data_collection_example.py --output-dir ./my_data
-
-可用数据源:
-
-- joint_states: 关节状态
-- head_rgb: 头部RGB相机
-- left_arm_rgb: 左臂RGB相机
-- right_arm_rgb: 右臂RGB相机
-- head_depth: 头部深度相机
-- imu: IMU传感器
-- odometry: 里程计
-- left_arm_end_pose: 左臂末端位姿
-- right_arm_end_pose: 右臂末端位姿
-
-**功能说明:**
-
-- `create_minimal_data_sources()`: 创建最小化数据采集配置（只采集关节状态）
-- `create_full_data_sources()`: 创建完整数据采集配置
-- `create_vision_only_sources()`: 创建仅视觉数据采集配置
-
-**使用方法:**
-
-```bash
-python3 custom_data_collection_example.py [options]
-```
-
----
-
 ## data_collection/collection_config.py
 
 传感器数据采集配置
@@ -150,7 +93,7 @@ robot = connect("x2://192.168.10.1:50051")
 # 使用预设配置
 collector = DataCollector(
     robot,
-    output_dir="./data",
+    output_dir="./collected_data",
     target_hz=30,
     collection_config=CollectionConfigPresets.full_manipulation()
 )
@@ -166,7 +109,7 @@ collector.stop_recording()
 
 数据采集示例
 
-这个脚本展示了如何使用DataCollector采集机器人数据
+这个脚本展示了如何使用DataCollector采集机器人数据，采集的数据保存在当前目录的collected_data目录下
 
 **功能说明:**
 
@@ -227,24 +170,6 @@ python3 depth_points.py --action stream --server 192.168.10.1:50051
 ```
 
 ---
-
-## gripper_control.py
-
-夹爪控制示例
-
-**功能说明:**
-
-- `move_gripper()`: 控制夹爪位置
-- `stream_gripper_data()`: 获取夹爪关节状态流
-
-**使用方法:**
-
-```bash
-# 获取左边夹爪的关节状态
-python3 gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
-# 控制左边夹爪
-python3 gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
-```
 
 ---
 
@@ -329,6 +254,26 @@ python3 quanta_x1/arm_control.py --server 192.168.10.1:50051 --mode end_pose --a
 
 ---
 
+## quanta_x1/gripper_control.py
+
+量子1号夹爪控制示例，其他机型请勿使用该示例
+
+**功能说明:**
+
+- `move_gripper()`: 控制夹爪位置
+- `stream_gripper_data()`: 获取夹爪关节状态流
+
+**使用方法:**
+
+```bash
+# 获取左边夹爪的关节状态
+python3 gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
+# 控制左边夹爪
+python3 gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
+```
+
+---
+
 ## quanta_x1/lift_control.py
 
 量子1号腰部使用示例，其他机型请勿使用该示例
@@ -376,6 +321,26 @@ python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode joint_pos --
 python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode joint_pos --arm left --action stream
 # 获取右臂的末端位姿流
 python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode end_pose --arm right --action stream
+```
+
+---
+
+## quanta_x2/gripper_control.py
+
+量子2号夹爪控制示例，其他机型请勿使用该示例
+
+**功能说明:**
+
+- `move_gripper()`: 控制夹爪位置
+- `stream_gripper_data()`: 获取夹爪关节位置流
+
+**使用方法:**
+
+```bash
+# 获取左边夹爪的关节状态
+python3 gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
+# 控制左边夹爪
+python3 gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
 ```
 
 ---

@@ -1,5 +1,5 @@
 from typing import Annotated
-from client.x2robot.sdk import CoordinateSystemMode, CoordinateSystemModeParam
+from x2robot.sdk import CoordinateSystemMode, CoordinateSystemModeParam
 import typer
 from x2robot import Robot, connect
 from x2robot.sdk import ChassisControlMode, ChassisControlModeParam, ChassisPosition, ChassisVelocity
@@ -12,32 +12,32 @@ import tty
 import signal
 
 def get_key():
-    """Linux/Ubuntu平台获取单个按键输入
-    
-    注意：在 raw 模式下，Ctrl+C 会被当作普通字符读取（ASCII 码 0x03）
-    需要特殊处理以支持正常的中断功能
+    """Get single key input on Linux/Ubuntu platforms
+
+    Note: In raw mode, Ctrl+C is read as a normal character (ASCII code 0x03)
+    Special handling is required to support normal interrupt functionality
     """
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(sys.stdin.fileno())
         ch = sys.stdin.read(1)
-        # Ctrl+C 在 raw 模式下是字符 '\x03'
+        # Ctrl+C in raw mode is character '\x03'
         if ch == '\x03':  # Ctrl+C
-            # 恢复终端设置
+            # Restore terminal settings
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            # 抛出 KeyboardInterrupt 异常
-            raise KeyboardInterrupt("用户按下 Ctrl+C")
+            # Raise KeyboardInterrupt exception
+            raise KeyboardInterrupt("User pressed Ctrl+C")
         elif ch:
             return ch.lower()
         else:
             return None
     finally:
-        # 确保终端设置被恢复（除非已经因为 Ctrl+C 恢复了）
+        # Ensure terminal settings are restored (unless already restored due to Ctrl+C)
         try:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         except:
-            pass  # 如果已经恢复过了，忽略错误
+            pass  # If already restored, ignore the error
 
 def move_to_global_position(robot: Robot):
     # need to set control mode to global first
@@ -67,17 +67,21 @@ def move_by_velocity(robot: Robot):
     # velocity mode must send command in a rate of at least 10Hz
     # rotate yaw is negative, clockwise
     for i in range(300):
+        cur_velocity = ChassisVelocity(vel_x=0.3, vel_y=0.0, vel_yaw=0)
+        robot.chassis.set_velocity(cur_velocity)
+        time.sleep(0.01)
+    time.sleep(1.0)
+    for i in range(800):
         cur_velocity = ChassisVelocity(vel_x=0.0, vel_y=0.0, vel_yaw=-0.4)
         robot.chassis.set_velocity(cur_velocity)
         time.sleep(0.01)
     time.sleep(1.0)
-
-    for i in range(300):
+    print("rotate yaw to positive 0.4 rad/s")
+    for i in range(800):
         cur_velocity = ChassisVelocity(vel_x=0.0, vel_y=0.0, vel_yaw=0.4)
         robot.chassis.set_velocity(cur_velocity)
         time.sleep(0.01)
     time.sleep(1.0)
-
     # stop, set all velocities to 0
     for i in range(100):
         cur_velocity = ChassisVelocity(vel_x=0.0, vel_y=0.0, vel_yaw=0.0)
@@ -127,47 +131,49 @@ def move_by_map(robot: Robot):
     get_chassis_odometry(robot)
 
 def stop_chassis(robot: Robot):
-    """停止底盘运动"""
-    # 发送停止命令至少100次（1秒），确保机器人完全停止
-    for i in range(20):
+    """Stop chassis movement"""
+    # send velocity command to stop chassis
+    for i in range(30):
         cur_velocity = ChassisVelocity(vel_x=0.0, vel_y=0.0, vel_yaw=0.0)
         robot.chassis.set_velocity(cur_velocity)
         time.sleep(0.01)
 
 def move_by_keyboard(robot: Robot):
-    """通过键盘实时控制底盘速度
-    
-    速度模式需要持续发送命令（至少10Hz），所以这里采用持续发送的方式
-    按下方向键时持续发送速度命令，松开或按下其他键时停止
+    """Control chassis velocity in real-time via keyboard
+
+    Velocity mode requires continuous command sending (at least 10Hz),
+    so continuous sending is used here.
+    When arrow keys are pressed, velocity commands are continuously sent,
+    and when released or other keys are pressed, movement stops.
     """
     # 设置速度控制模式
     robot.chassis.set_control_mode(ChassisControlModeParam(mode=ChassisControlMode.VELOCITY))
     
-    # 先确保机器人停止
-    print("正在停止底盘...")
+    # First ensure the robot is stopped
+    print("Stopping chassis...")
     stop_chassis(robot)
     
     vel_x = 0.25
     vel_yaw = 0.3
     
     print("=" * 60)
-    print("键盘控制底盘速度")
+    print("Keyboard Control Chassis Velocity")
     print("=" * 60)
-    print("方向控制：")
-    print("  w - 前进")
-    print("  s - 后退")
-    print("  a - 左转（逆时针）")
-    print("  d - 右转（顺时针）")
-    print("速度调整：")
-    print("  i - 增加前进速度")
-    print("  k - 减少前进速度")
-    print("  j - 增加旋转速度")
-    print("  l - 减少旋转速度")
-    print("  space - 停止")
-    print("  q - 退出")
+    print("Direction Control:")
+    print("  w - Forward")
+    print("  s - Backward")
+    print("  a - Turn left (counter-clockwise)")
+    print("  d - Turn right (clockwise)")
+    print("Speed Adjustment:")
+    print("  i - Increase forward speed")
+    print("  k - Decrease forward speed")
+    print("  j - Increase rotation speed")
+    print("  l - Decrease rotation speed")
+    print("  space - Stop")
+    print("  q - Quit")
     print("=" * 60)
-    print(f"当前速度: vel_x={vel_x:.2f} m/s, vel_yaw={vel_yaw:.2f} rad/s")
-    print("等待按键输入...")
+    print(f"Current speed: vel_x={vel_x:.2f} m/s, vel_yaw={vel_yaw:.2f} rad/s")
+    print("Waiting for key input...")
     
     current_vel_x = 0.0
     current_vel_y = 0.0
@@ -177,26 +183,26 @@ def move_by_keyboard(robot: Robot):
         while True:
             key = get_key()
             if key is None:
-                continue  # 忽略无效按键
+                continue 
             
             if key == 'w':
-                # 前进：持续发送速度命令
-                print(f"前进: vel_x={vel_x:.2f}")
+                # Forward: continuously send velocity commands
+                print(f"Forward: vel_x={vel_x:.2f}")
                 current_vel_x = vel_x
                 current_vel_y = 0.0
                 current_vel_yaw = 0.0
-                # 持续发送命令直到按下其他键
-                for _ in range(30):  # 发送1秒的命令
+                # Continuously send commands until another key is pressed
+                for _ in range(30):  # Send commands for 1 second
                     cur_velocity = ChassisVelocity(vel_x=current_vel_x, vel_y=current_vel_y, vel_yaw=current_vel_yaw)
                     robot.chassis.set_velocity(cur_velocity)
                     time.sleep(0.01)
-                # 停止
+                # Stop
                 stop_chassis(robot)
                 current_vel_x = 0.0
                 
             elif key == 's':
-                # 后退
-                print(f"后退: vel_x={-vel_x:.2f}")
+                # Backward
+                print(f"Backward: vel_x={-vel_x:.2f}")
                 current_vel_x = -vel_x
                 current_vel_y = 0.0
                 current_vel_yaw = 0.0
@@ -208,8 +214,8 @@ def move_by_keyboard(robot: Robot):
                 current_vel_x = 0.0
                 
             elif key == 'a':
-                # 左转（逆时针，正角速度）
-                print(f"左转: vel_yaw={vel_yaw:.2f}")
+                # Turn left (counter-clockwise, positive angular velocity)
+                print(f"Turn left: vel_yaw={vel_yaw:.2f}")
                 current_vel_x = 0.0
                 current_vel_y = 0.0
                 current_vel_yaw = vel_yaw
@@ -221,8 +227,8 @@ def move_by_keyboard(robot: Robot):
                 current_vel_yaw = 0.0
                 
             elif key == 'd':
-                # 右转（顺时针，负角速度）
-                print(f"右转: vel_yaw={-vel_yaw:.2f}")
+                # Turn right (clockwise, negative angular velocity)
+                print(f"Turn right: vel_yaw={-vel_yaw:.2f}")
                 current_vel_x = 0.0
                 current_vel_y = 0.0
                 current_vel_yaw = -vel_yaw
@@ -235,44 +241,44 @@ def move_by_keyboard(robot: Robot):
                 
             elif key == 'i':
                 vel_x += 0.05
-                vel_x = max(0.0, min(vel_x, 1.0))  # 限制在0-1之间
-                print(f"前进速度增加到: {vel_x:.2f} m/s")
-                
+                vel_x = max(0.0, min(vel_x, 1.0))  # Limit between 0-1
+                print(f"Forward speed increased to: {vel_x:.2f} m/s")
+
             elif key == 'k':
                 vel_x -= 0.05
                 vel_x = max(0.0, min(vel_x, 1.0))
-                print(f"前进速度减少到: {vel_x:.2f} m/s")
-                
+                print(f"Forward speed decreased to: {vel_x:.2f} m/s")
+
             elif key == 'j':
                 vel_yaw += 0.05
-                vel_yaw = max(0.0, min(vel_yaw, 2.0))  # 限制在0-2之间
-                print(f"旋转速度增加到: {vel_yaw:.2f} rad/s")
-                
+                vel_yaw = max(0.0, min(vel_yaw, 2.0))  # Limit between 0-2
+                print(f"Rotation speed increased to: {vel_yaw:.2f} rad/s")
+
             elif key == 'l':
                 vel_yaw -= 0.05
                 vel_yaw = max(0.0, min(vel_yaw, 2.0))
-                print(f"旋转速度减少到: {vel_yaw:.2f} rad/s")
-                
-            elif key == ' ' or key == '\x20':  # 空格键
-                print("停止")
+                print(f"Rotation speed decreased to: {vel_yaw:.2f} rad/s")
+
+            elif key == ' ' or key == '\x20':  # Space key
+                print("Stop")
                 stop_chassis(robot)
                 current_vel_x = 0.0
                 current_vel_y = 0.0
                 current_vel_yaw = 0.0
-                
+
             elif key == 'q':
-                print("退出")
+                print("Quit")
                 stop_chassis(robot)
                 break
             else:
-                # 忽略其他无效按键
+                # ignore other invalid keys
                 pass
                 
     except KeyboardInterrupt:
-        print("\n收到中断信号，停止底盘...")
+        print("\nReceived interrupt signal, stopping chassis...")
         stop_chassis(robot)
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"Error occurred: {e}")
         import traceback
         traceback.print_exc()
         stop_chassis(robot)
@@ -284,20 +290,22 @@ def main(
 ):
     robot = connect(f"x2://{server}")
 
-    # 注意：在键盘控制模式下，Ctrl+C 会在 get_key() 中处理
-    # 这里设置信号处理器作为备用（虽然 raw 模式下可能不会触发）
+    # Note: In keyboard control mode, Ctrl+C is handled in get_key()
+    # Set signal handler as backup (though it may not trigger in raw mode)
     def signal_handler(signum, frame):
-        print("\n收到中断信号，退出...")
+        print("\nReceived interrupt signal, exiting...")
         exit(0)
     signal.signal(signal.SIGINT, signal_handler)
 
     if control_mode == "map":
-        print("this example is going to rotate the chassis for 3s by 0.4 rad/s, please make sure there is enough space around the robot")
+        print("This example is going to move forward for 1m and then rotate the chassis for 8 seconds by 0.4 rad/s clockwise and counter-clockwise")
+        print("Please make sure there is at least 2m distance between the robot and the obstacle!!!")
+        print("Please make sure there is enough space around the robot to move!!!")
         if not input("continue? (y/n): ").lower() == "y":
             return
         move_by_map(robot)
     elif control_mode == "keyboard":
-        print("准备开始键盘控制，请确保有足够的空间")
+        print("Ready to start keyboard control, please ensure there is enough space!!!")
         if not input("continue? (y/n): ").lower() == "y":
             return
         move_by_keyboard(robot)

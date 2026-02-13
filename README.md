@@ -8,7 +8,7 @@
 
 ## Introduction
 
-X2Robot SDK provides Python client libraries for controlling X2 robots.
+X2Robot SDK provides Python libraries for controlling X2 robots.
 
 ## System Requirements
 
@@ -19,12 +19,14 @@ X2Robot SDK provides Python client libraries for controlling X2 robots.
 - Storage: 100GB available space
 - Network: Stable network connection
 
-### Software Environment
+### Software Requirements
 
 | Component | Version Requirement | Description |
 |-----------|---------------------|-------------|
-| Operating System | Ubuntu 22.04/24.04 | LTS versions recommended |
+| Operating System | Ubuntu 22.04/24.04 (x86_64) | LTS versions recommended |
 | Python | 3.10+ | SDK development language |
+
+## Getting Started
 
 ### Environment Setup
 
@@ -47,6 +49,15 @@ For Ubuntu and Python installation instructions, please refer to:
 3. Restart Network Interface:
 
    - Turn off and then turn on the network interface to apply changes
+
+   ```bash
+   # View network interfaces
+   ifconfig
+
+   # Restart network interface
+   sudo ifconfig eth0 down
+   sudo ifconfig eth0 up
+   ```
 
 4. Verify Connectivity:
 
@@ -72,6 +83,27 @@ sudo apt install python3.10-venv
 # sudo apt install python3.12-venv
 ```
 
+### Configure pip Mirror Source (Recommended For Chinese Users)
+
+Since some dependency packages may download slowly in Mainland China, it is recommended to configure a pip mirror source to speed up downloads:
+
+```bash
+# Configure Tsinghua University mirror source (recommended)
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+# Or configure Alibaba Cloud mirror source
+# pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+
+# Verify configuration
+pip config list
+```
+
+**Note:** After configuring the mirror source, pip will download packages from the mirror site, which can significantly improve download speed. If you encounter a specific package that cannot be downloaded from the mirror source, you can temporarily use the official source:
+
+```bash
+pip install -i https://pypi.org/simple/ package-name
+```
+
 ### Virtual Environment Setup
 
 ```bash
@@ -84,14 +116,21 @@ source .venv/bin/activate
 
 ### Download and Install SDK
 
-Download the latest SDK package and install:
+Download the latest SDK package from github Release and install:
 
 ```bash
 # Install whl package
 pip install x2robot-1.0.0-py3-none-any.whl
 ```
 
-## Quick Start
+### Uninstall SDK
+
+When updating the SDK version, you need to uninstall the previous version first. Note that uninstallation must also be performed within the SDK virtual environment.
+
+```bash
+# Uninstall x2robot, assume previous SDK version is v0.1.8
+pip uninstall x2robot-0.1.8-py3-none-any.whl
+```
 
 ### First Program - Connection Test
 
@@ -145,12 +184,94 @@ See [API Documentation](docs/API_Quanta_X1.md) for complete API reference.
 
 See [Examples](examples/) for code examples.
 
+## Collect Data and Convert to Lerobot Format
+
+Please refer to the [data collection example](examples/data_collection_example.py) and the [convert to Lerobot format script](tools/convert_to_lerobot.py).
+
+convert_to_lerobot.py usage example:
+
+```bash
+python3 tools/convert_to_lerobot.py \
+    --input-dir collected_data \
+    --output-dir ./lerobot_data \
+    --repo-id my_robot/dataset \
+    --robot-type quanta_x1 \
+    --use-videos
+```
+
 ## FAQ
 
-### How to connect to robot?
+### Q1: Import error when running example code?
+
+As shown below:
+
+![Image](docs/Q1.png)
+
+This usually happens when the virtual environment is not activated. Please run the following command according to your virtual environment installation directory:
+
+```bash
+source .venv/bin/activate
+```
+
+### Q2: Playback script error, inference script error
+
+A:
+
+1. If the collected data is fine but the playback script fails, the current mode may be data collection mode. Switch to idle mode for playback.
+2. The inference script also needs to be run in idle mode. Otherwise, it will fail as shown below:
+
+![Image](docs/Q2.jpeg)
+Switch to idle mode using the main arm to run successfully.
+
+### Q3: Robot does not move after mapping when given target point for positioning and navigation
+
+A:
+When executing positioning and navigation, the robot does not move and sometimes reports errors as shown below:
+![Image](docs/Q3.jpeg)
+To ensure positioning and navigation accuracy, the robot requires that during mapping the movement distance must reach 3.5 m or the rotation angle must reach 210 degrees for the map to be considered valid. It is recommended to move back and forth sufficiently in an open area after starting mapping, then end mapping. Refer to the example code chassis_control.py.
+To switch control-mode to map, it will first perform mapping then navigate to the target point using relative positioning:
+
+```bash
+python3 chassis_control.py --server 192.168.10.11:50051 --control-mode map
+```
+
+### Q4: Both robot arms completely power off during operation
+
+A:
+The current mechanism is that when the overall battery level is below 7%, the arms will power off first. All arm joint motors will automatically release brakes. It is recommended to add real-time battery monitoring in the control program. For usage of the interface to get current battery level, refer to the example code system.py:
 
 ```python
-from x2robot import connect
-
-robot = connect('x2://localhost:50051')
+result = robot.system.get_dynamic_info()
+print(f"dynamic_info:{result.power_status.value}")
 ```
+
+### Q5: Connection reset by peer error during operation
+
+A:
+
+There are 3 situations that can cause disconnection:
+
+1. When controlling via wireless connection, excessive data transfer and high network latency can cause connection errors. It is recommended to use wired connection for high-frequency control.
+2. In wired connection data collection scenarios, large data transfer and untimely writing of collected data to files can cause connection interruption. It is recommended to close other unnecessary processes on the user PC. If interruption occurs, please retry.
+3. In inference mode, the inference data transfer volume is also large, which can cause errors as shown below.
+
+![Image](docs/Q5.jpeg)
+When running the start_sdk_ex001.sh script again, it will continue the previously interrupted inference process.
+
+### Q6: Map save failed when mapping ends
+
+When mapping ends, saving the map shows "map save failed".
+
+![Image](docs/Q6.png)
+
+A:
+
+Same reason as Q3: To ensure positioning and navigation accuracy, the robot requires that during mapping the movement distance must reach 3.5 m or the rotation angle must reach 210 degrees for the map to be considered valid. It is recommended to move back and forth sufficiently in an open area after starting mapping, then end mapping.
+
+## Development Notes
+
+- **Version compatibility**: Use matching firmware and SDK versions
+- **Environment requirements**: Run the SDK in a supported software environment
+- **Frequency limit**: Do not exceed 200 Hz when calling control interfaces
+- **Specification limit**: Parameters passed to control interfaces must not exceed the position limits of each joint
+- **Exception handling**: Handle interface exceptions properly; refer to FAQ or contact technical support when issues occur

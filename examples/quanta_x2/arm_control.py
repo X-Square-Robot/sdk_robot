@@ -112,7 +112,7 @@ def move_by_joint_positions(robot: Robot, arm):
 
 
 # move by end pose
-def move_arm_endpose_toppra(arm, target_pose, v_max=2.2, a_max=0.3):
+def move_arm_endpose_toppra(arm, target_pose, other_arm=None, v_max=2.2, a_max=0.3):
     # 1. Get current real pose as the absolute starting point
     start_pose = arm.get_end_pose()
     
@@ -123,6 +123,9 @@ def move_arm_endpose_toppra(arm, target_pose, v_max=2.2, a_max=0.3):
                start_pose.pose.orientation.z, start_pose.pose.orientation.w]
     q_end = [target_pose.orientation.x, target_pose.orientation.y, 
              target_pose.orientation.z, target_pose.orientation.w]
+
+    if other_arm is not None:
+        other_pose = other_arm.get_end_pose()
 
     # 2. TOPP-RA Trajectory Planning
     dist = np.linalg.norm(p_end - p_start)
@@ -178,6 +181,9 @@ def move_arm_endpose_toppra(arm, target_pose, v_max=2.2, a_max=0.3):
 
         # Send target command
         arm.set_end_pose(pose)
+
+        if other_arm is not None:
+            other_arm.set_end_pose(other_pose.pose)
         time.sleep(interval)
 
     # 5. Print joint angles after movement finishes
@@ -185,15 +191,10 @@ def move_arm_endpose_toppra(arm, target_pose, v_max=2.2, a_max=0.3):
     time.sleep(0.1)
     
     # Read and print joint angles
-    joint_state = arm.get_joint_states()
-    print(f"\nMovement finished. Current joint angles (radians):")
-    print(joint_state.position)
-    
-    # Optional: Display in degrees
-    # print([np.rad2deg(p) for p in joint_state.position])
-
-    print("Movement Completed")
-
+    cur_pose = arm.get_end_pose()
+    print(f"\nMovement finished:\n")
+    print(f"Current end pose: position={cur_pose.pose.position}, orientation={cur_pose.pose.orientation}")
+    print(f"Target end pose: position={target_pose.position}, orientation={target_pose.orientation}")
 
 def move_by_end_pose(robot: Robot, arm):
     # 1. Initialization and configuration
@@ -201,28 +202,27 @@ def move_by_end_pose(robot: Robot, arm):
     # Set to end pose control mode
     robot.robot_control.set_manipulator_control_mode(ManipulatorControlModeParam(mode=ManipulatorControlMode.MANIPULATOR_END_POSE))
 
-    # --- Task A: End Pose Reset (All axes to zero) ---
+    # --- Task A: End Pose Reset
     print("Starting end pose reset...")
-    zero_pose = Pose()
-    zero_pose.position = Point(x=0.0, y=0.0, z=0.1)
-    zero_pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
     if (arm == "left"):
-        move_arm_endpose_toppra(robot.left_arm, zero_pose)
+        zero_pose = Pose(position=Point(x=0.400, y=0.220, z=0.877), orientation=Quaternion(x=0.000, y=-0.001, z=0.001, w=1.000))
+        move_arm_endpose_toppra(robot.left_arm, zero_pose, other_arm=robot.right_arm)
     else:
-        move_arm_endpose_toppra(robot.right_arm, zero_pose)
+        # !Note: Y axis is negative for right arm
+        zero_pose = Pose(position=Point(x=0.400, y=-0.220, z=0.877), orientation=Quaternion(x=-0.000, y=0.000, z=0.000, w=1.000))
+        move_arm_endpose_toppra(robot.right_arm, zero_pose, other_arm=robot.left_arm)
     
     time.sleep(2)
 
     # --- Task B: Move to specific end pose ---
-    target = Pose()
-    target.position = Point(x=0.0, y=0.0, z=0.2)
-    target.orientation = Quaternion(x=-0.0076, y=0.0868, z=0.0868, w=0.9924)
-    
+    # move up 20 cm
     print("Executing TOPP-RA trajectory control...")
     if (arm == "left"):
-        move_arm_endpose_toppra(robot.left_arm, target)
+        target = Pose(position=Point(x=0.400, y=0.220, z=1.080), orientation=Quaternion(x=0.000, y=0.000, z=0.000, w=1.000))
+        move_arm_endpose_toppra(robot.left_arm, target, other_arm=robot.right_arm)
     else:
-        move_arm_endpose_toppra(robot.right_arm, target)
+        target = Pose(position=Point(x=0.400, y=-0.220, z=1.080), orientation=Quaternion(x=0.000, y=0.000, z=0.000, w=1.000))
+        move_arm_endpose_toppra(robot.right_arm, target, other_arm=robot.left_arm)
 
     time.sleep(2)
     print("Demo finished.")

@@ -1,14 +1,14 @@
-# 数据采集工具
+# Data Collection Tools
 
-这个目录包含可定制的数据采集工具：
+This directory contains customizable data collection tools:
 
-- `collection_config.py` - 采集配置定义和预设
-- `data_collector.py` - 数据采集器实现
+- `collection_config.py` - Collection configuration definitions and presets
+- `data_collector.py` - Data collector implementation
 
-## 使用方法
+## Usage
 
-用户可以直接修改这些文件来定制自己的数据采集流程。
+Users can directly modify these files to customize their own data collection workflow.
 
-## 示例
+## Examples
 
-参见 `data_collection_example.py`
+See `data_collection_example.py`

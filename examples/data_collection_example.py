@@ -1,7 +1,7 @@
 """
-数据采集示例
+Data Collection Example
 
-这个脚本展示了如何使用DataCollector采集机器人数据
+This script demonstrates how to use DataCollector to collect robot data
 """
 
 import time
@@ -11,7 +11,7 @@ import typer
 import signal
 import sys
 
-# 添加当前目录到Python路径（这样可以导入data_collection模块）
+# Add current directory to Python path (to import data_collection module)
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data_collection.data_collector import DataCollector
@@ -19,10 +19,10 @@ from data_collection.collection_config import CollectionConfig
 from x2robot import connect
 
 def signal_handler(sig, frame):
-    """处理Ctrl+C信号"""
-    print("\n\n收到中断信号，正在停止...")
-    # 注意：DataCollector 已经注册了信号处理器来清理临时文件
-    # 这里直接退出即可，清理工作由 DataCollector 的信号处理器完成
+    """Handle Ctrl+C signal"""
+    print("\n\nReceived interrupt signal, stopping...")
+    # Note: DataCollector has already registered a signal handler to clean up temporary files
+    # Just exit here, cleanup work is done by DataCollector's signal handler
     sys.exit(0)
 
 
@@ -30,7 +30,6 @@ def create_collection_config_for_quanta_x1() -> CollectionConfig:
     # Do not set SDK mode
     collection_config = CollectionConfig()
 
-    # 采集从臂关节状态（CX002模型）
     collection_config.slave_joint_names = [
         'left_arm_joint_states',
         'right_arm_joint_states',
@@ -39,153 +38,155 @@ def create_collection_config_for_quanta_x1() -> CollectionConfig:
         'right_gripper_joint_states',
         'head_joint_states'
     ]
-    # action_names 会自动根据 joint_names 生成，也可以手动指定
-    collection_config.enable_head_rgb_stream = True # 采集头部RGB视频流
-    collection_config.enable_left_arm_rgb_stream = True # 采集左臂RGB视频流
-    collection_config.enable_right_arm_rgb_stream = True # 采集右臂RGB视频流
-    collection_config.enable_left_arm_end_pose = True # 采集左臂末端位姿
-    collection_config.enable_right_arm_end_pose = True # 采集右臂末端位姿
-    collection_config.enable_odometry = True # 采集里程计数据
-    collection_config.enable_master_arm_data = True # 采集主臂关节状态和末端位姿
-    collection_config.enable_wrench_ext_world = True # 采集手腕外力
-    collection_config.enable_wrench_ext_local = True # 采集手腕本地力
+    # action_names will be generated automatically from joint_names, or can be specified manually
+    collection_config.enable_head_rgb_stream = True # Collect head RGB video stream
+    collection_config.enable_left_arm_rgb_stream = True # Collect left arm RGB video stream
+    collection_config.enable_right_arm_rgb_stream = True # Collect right arm RGB video stream
+    collection_config.enable_left_arm_end_pose = True # Collect left arm end pose
+    collection_config.enable_right_arm_end_pose = True # Collect right arm end pose
+    collection_config.enable_odometry = True # Collect odometry data
+    collection_config.enable_master_arm_data = True # Collect master arm joint states and end pose
+    collection_config.enable_wrench_ext_world = True # Collect wrist external force
+    collection_config.enable_wrench_ext_local = True # Collect wrist local force
 
     return collection_config
 
 def create_collection_config_for_quanta_x2() -> CollectionConfig:
     collection_config = CollectionConfig()
-    # 采集从臂关节状态（EX001模型）
     collection_config.slave_joint_names = [
         'left_arm_joint_states',
         'right_arm_joint_states',
         'waist_joint_states',
-        'left_gripper_joint_states',
-        'right_gripper_joint_states',
         'head_joint_states'
     ]
-    # action_names 会自动根据 joint_names 生成，也可以手动指定
-    collection_config.enable_head_rgb_stream = True # 采集头部RGB视频流
-    collection_config.enable_left_arm_rgb_stream = True # 采集左臂RGB视频流
-    collection_config.enable_right_arm_rgb_stream = True # 采集右臂RGB视频流
-    collection_config.enable_left_arm_end_pose = True # 采集左臂末端位姿
-    collection_config.enable_right_arm_end_pose = True # 采集右臂末端位姿
-    collection_config.enable_odometry = True # 采集里程计数据
-    # 没有主臂关节状态和末端位姿
-    # 没有手腕外力和手腕本地力
-    # 有触觉传感器数据
-    collection_config.enable_left_gripper_tactile = True # 采集左手指触觉传感器数据
-    collection_config.enable_right_gripper_tactile = True # 采集右手指触觉传感器数据
+    # action_names will be generated automatically from joint_names, or can be specified manually
+    collection_config.enable_head_rgb_stream = True # Collect head RGB video stream
+    collection_config.enable_left_arm_rgb_stream = True # Collect left arm RGB video stream
+    collection_config.enable_right_arm_rgb_stream = True # Collect right arm RGB video stream
+    collection_config.enable_left_arm_end_pose = True # Collect left arm end pose
+    collection_config.enable_right_arm_end_pose = True # Collect right arm end pose
+    collection_config.enable_left_gripper_position = True # Collect left gripper position
+    collection_config.enable_right_gripper_position = True # Collect right gripper position
+    collection_config.enable_odometry = True # Collect odometry data
+
+    collection_config.enable_waist_end_pose = True # Collect waist end pose
+
+    # No master arm joint states and end pose
+    # No wrist external and local force
+    # Has tactile sensor data
+    collection_config.enable_left_gripper_tactile = True # Collect left finger tactile sensor data
+    collection_config.enable_right_gripper_tactile = True # Collect right finger tactile sensor data
     return collection_config
 
 def create_collection_config_for_desktop() -> CollectionConfig:
     collection_config = CollectionConfig()
-    # 采集从臂关节状态（Desktop模型，只有左右臂）
+    # Collect slave arm joint states (Desktop model, only left and right arms)
     collection_config.slave_joint_names = [
         'left_arm_joint_states',
         'right_arm_joint_states',
         'left_gripper_joint_states',
         'right_gripper_joint_states'
     ]
-    # action_names 会自动根据 joint_names 生成，也可以手动指定
-    collection_config.enable_head_rgb_stream = True # 采集头部RGB视频流
-    collection_config.enable_left_arm_rgb_stream = True # 采集左臂RGB视频流
-    collection_config.enable_right_arm_rgb_stream = True # 采集右臂RGB视频流
-    collection_config.enable_left_arm_end_pose = True # 采集左臂末端位姿
-    collection_config.enable_right_arm_end_pose = True # 采集右臂末端位姿
+    # action_names will be generated automatically from joint_names, or can be specified manually
+    collection_config.enable_head_rgb_stream = True # Collect head RGB video stream
+    collection_config.enable_left_arm_rgb_stream = True # Collect left arm RGB video stream
+    collection_config.enable_right_arm_rgb_stream = True # Collect right arm RGB video stream
+    collection_config.enable_left_arm_end_pose = True # Collect left arm end pose
+    collection_config.enable_right_arm_end_pose = True # Collect right arm end pose
     return collection_config
 
 def main(
     server: Annotated[str, typer.Option(help="server address, e.g., localhost:50051")] = "localhost:50051",
 ):
-    # 注册信号处理器
+    # Register signal handler
     signal.signal(signal.SIGINT, signal_handler)
     
-    # 连接机器人
-    print(f"正在连接机器人 {server}...")
+    # Connect to robot
+    print(f"Connecting to robot {server}...")
     robot = connect(f"x2://{server}")
-    print("✓ 机器人连接成功")
+    print("✓ Robot connected successfully")
 
-    if robot.get_robot_model() == "EX001":
+    if robot.get_robot_model() == "quanta_x1":
         collection_config = create_collection_config_for_quanta_x1()
-    elif robot.get_robot_model() == "CX002":
+    elif robot.get_robot_model() == "quanta_x2":
         collection_config = create_collection_config_for_quanta_x2()
-    elif robot.get_robot_model() == "Desktop":
+    elif robot.get_robot_model() == "desktop":
         collection_config = create_collection_config_for_desktop()
     else:
-        raise ValueError(f"Invalid model: {robot.get_robot_model()}, valid models: EX001, CX002, Desktop")
+        raise ValueError(f"Invalid model: {robot.get_robot_model()}, valid models: quanta_x1, quanta_x2, Desktop")
 
 
-    # 创建数据采集器 - 优化配置以提高性能
+    # Create data collector - optimize configuration to improve performance
     collector = DataCollector(
         robot=robot,
         output_dir="./collected_data",
-        target_hz=30,                      # 目标频率（降采样后）
+        target_hz=30,                      # Target frequency (after downsampling)
         collection_config=collection_config,
-        image_quality=95,                  # JPEG质量
-        downsample_joint_states=True,       # 是否降采样关节状态, 建议开启（eg: 500Hz -> target_hz=60Hz）
+        image_quality=95,                  # JPEG quality
+        downsample_joint_states=True,       # Whether to downsample joint states, recommended to enable (eg: 500Hz -> target_hz=60Hz)
         use_video_storage=True
     )
 
     print("\n" + "="*60)
-    print("数据采集器已就绪")
+    print("Data collector is ready")
     print("="*60)
-    print(f"输出目录: {collector.output_dir}")
-    print(f"目标频率: {collector.target_hz} Hz")
-    print(f"图像存储: {'MP4视频' if collector.use_video_storage else 'JPG图像'}")
-    print("\n提示:")
-    print("  - 每次调用 start_recording() 会自动启动所有数据采集线程")
-    print("  - 调用 stop_recording() 会自动停止所有线程并保存数据")
-    print("  - 按 Ctrl+C 可以随时中断程序")
+    print(f"Output directory: {collector.output_dir}")
+    print(f"Target frequency: {collector.target_hz} Hz")
+    print(f"Image storage: {'MP4 video' if collector.use_video_storage else 'JPG image'}")
+    print("\nTips:")
+    print("  - start_recording() will start all data collection threads automatically")
+    print("  - stop_recording() will stop all threads automatically and save data")
+    print("  - press Ctrl+C to interrupt the program at any time")
     print("="*60 + "\n")
     
     try:
-        # 录制多个episodes
+        # Record multiple episodes
         episode_index = 0
         while True:
-            # 显示当前要录制的episode编号（基于已有episodes数量）
+            # Show current episode number to record (based on number of existing episodes)
             current_episode_num = collector.episode_count
             print(f"\n{'='*60}")
-            print(f"准备录制 Episode {current_episode_num}")
+            print(f"Ready to record Episode {current_episode_num}")
             print(f"{'='*60}")
             
-            # 询问任务名称
-            task_name = input("请输入任务名称 (例如: pick_trash，直接回车使用默认名称): ").strip()
+            # Ask for task name
+            task_name = input("Enter task name (e.g.: pick_trash, press Enter to use default name): ").strip()
             if not task_name:
                 task_name = "pick_trash"
             
-            print(f"\n任务名称: {task_name}")
-            print("请准备好机器人，按 Enter 开始录制...")
+            print(f"\nTask name: {task_name}")
+            print("Please prepare the robot, press Enter to start recording...")
             input()
             
-            # 开始录制（会自动启动所有采集线程）
+            # Start recording (will start all data collection threads automatically)
             print("\n" + "="*60)
-            print("开始录制...")
+            print("Start recording...")
             print("="*60)
             collector.start_recording(task=task_name)
             
-            print("\n✓ 所有数据采集线程已启动")
-            print("正在录制中...")
-            print("提示: 执行你的任务，完成后按 Enter 停止录制")
-            print("      (或按 Ctrl+C 中断当前录制)\n")
+            print("\n✓ All data collection threads have been started")
+            print("Recording in progress...")
+            print("Tips: execute your task, press Enter to stop recording")
+            print("      (or press Ctrl+C to interrupt current recording)\n")
             
-            # 每秒打印一次统计信息
+            # Print statistics every second
             recording_interrupted = False
             while True:
                 try:
-                    # 非阻塞输入检测
+                    # Non-blocking input detection
                     import select
                     if select.select([sys.stdin], [], [], 1)[0]:
-                        input()  # 读取输入
+                        input()  # Read input
                         break
                     
-                    # 打印统计
+                    # Print statistics
                     collector.print_stats()
                 except KeyboardInterrupt:
-                    print("\n\n收到中断信号，正在停止录制...")
+                    print("\n\nReceived interrupt signal, stopping recording...")
                     recording_interrupted = True
                     break
             
-            # 停止录制（会自动停止所有采集线程）
+            # Stop recording (will stop all data collection threads automatically)
             episode_info = None
             if collector.is_recording:
                 episode_info = collector.stop_recording()
@@ -193,48 +194,48 @@ def main(
             if episode_info:
                 episode_id = episode_info['episode_id']
                 print(f"\n{'='*60}")
-                print(f"✓ Episode {episode_id} 录制完成!")
+                print(f"✓ Episode {episode_id} recording completed!")
                 print(f"{'='*60}")
                 print(f"  - Episode ID: {episode_id}")
-                print(f"  - 任务名称: {episode_info.get('task', task_name)}")
-                print(f"  - 帧数: {episode_info['num_frames']}")
-                print(f"  - 时长: {episode_info['duration']:.2f}s")
-                print(f"  - 保存路径: {episode_info['episode_dir']}")
+                print(f"  - Task name: {episode_info.get('task', task_name)}")
+                print(f"  - Number of frames: {episode_info['num_frames']}")
+                print(f"  - Duration: {episode_info['duration']:.2f}s")
+                print(f"  - Save path: {episode_info['episode_dir']}")
             else:
                 current_episode_num = collector.episode_count
-                print(f"\n⚠️  Episode {current_episode_num} 录制失败")
+                print(f"\n⚠️  Episode {current_episode_num} recording failed")
             
             if recording_interrupted:
-                print("\n录制已中断")
+                print("\nRecording interrupted")
                 break
             
-            # 询问是否继续
+            # Ask whether to continue recording
             print("\n" + "-"*60)
-            continue_recording = input("是否继续录制下一个episode? (y/n，默认n): ").strip().lower()
+            continue_recording = input("Continue recording next episode? (y/n, default n): ").strip().lower()
             if continue_recording != 'y':
-                print("停止录制")
+                print("Stop recording")
                 break
             
             episode_index += 1
         
     except KeyboardInterrupt:
-        print("\n\n收到中断信号，正在停止...")
+        print("\n\nReceived interrupt signal, stopping...")
     except Exception as e:
-        print(f"\n发生错误: {e}")
+        print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
     finally:
-        # 确保停止录制（如果还在录制中）
+        # Ensure stopping recording (if still recording)
         if collector.is_recording:
-            print("\n正在停止录制...")
+            print("\nStopping recording...")
             collector.stop_recording()
         
         print("\n" + "="*60)
-        print("数据采集已完成!")
+        print("Data collection completed!")
         print("="*60)
-        print(f"总共录制了 {collector.episode_count} 个episodes")
-        print(f"数据保存在: {collector.output_dir}")
-        print(f"\n转换为LeRobot格式:")
+        print(f"Total {collector.episode_count} episodes recorded")
+        print(f"Data saved in: {collector.output_dir}")
+        print(f"\nConvert to LeRobot format:")
         print(f"python3 tools/convert_to_lerobot.py \\")
         print(f"    --input-dir {collector.output_dir} \\")
         print(f"    --output-dir ./lerobot_data \\")

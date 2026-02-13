@@ -5,7 +5,7 @@ from x2robot import Robot, connect
 from x2robot.sdk import LiftPosition, RobotModeParam, RobotWorkMode
 import time
 
-# only for CX001 or EX001
+# only for quanta_x1
 def move_by_lift_position(robot: Robot, direction: str, distance: float):
     cur_position = robot.lift.get_lift_position()
     print(f"current_position: {cur_position}")
@@ -35,7 +35,7 @@ def stream_lift_joint_states(robot: Robot):
 def main(
     server: Annotated[str, typer.Option(help="server address, e.g., localhost:50051")] = "localhost:50051",
     action: Annotated[str, typer.Option(help="action: move, stream")] = "move",
-    direction: Annotated[str, typer.Option(help="direction: up, down")] = "up",
+    direction: Annotated[str, typer.Option(help="direction: up, down")] = "down",
     distance: Annotated[float, typer.Option(help="distance: distance to move")] = 0.05,
 ):
 
@@ -43,7 +43,7 @@ def main(
 
     if action == "move":
         robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
-        # CX001 or EX001, move by lift position
+        # quanta_x1, move by lift position
         move_by_lift_position(robot, direction, distance)
     elif action == "stream":
         stream_lift_joint_states(robot)

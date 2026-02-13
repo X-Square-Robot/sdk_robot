@@ -1,6 +1,6 @@
 # X2Robot SDK
 
-<div align="center">
+<div align="left">
   <img src="docs/logo.png" alt="X2Robot Logo" width="200"/>
 </div>
 
@@ -8,7 +8,7 @@
 
 ## 简介
 
-X2Robot SDK 提供了用于控制 X2 机器人的 Python 客户端库。
+X2Robot SDK 提供了用于控制 X2 机器人的 Python 库。
 
 ## 系统要求
 
@@ -19,12 +19,14 @@ X2Robot SDK 提供了用于控制 X2 机器人的 Python 客户端库。
 - 存储: 100GB 可用空间
 - 网络: 稳定的网络连接
 
-### 软件环境
+### 软件环境要求
 
 | 组件 | 版本要求 | 说明 |
 |------|---------|------|
-| 操作系统 | Ubuntu 22.04/24.04 | 推荐使用 LTS 版本 |
+| 操作系统 | Ubuntu 22.04/24.04 (x86_64) | 推荐使用 LTS 版本 |
 | Python | 3.10+ | SDK 开发语言 |
+
+## 快速开始
 
 ### 环境搭建
 
@@ -49,6 +51,15 @@ Ubuntu 和 Python 安装说明请参考：
 3. 重启网络接口：
 
    - 关闭然后重新打开网络接口以应用更改
+
+   ```bash
+   # 查看网口
+   ifconfig
+
+   # 重启网口
+   sudo ifconfig eth0 down
+   sudo ifconfig eth0 up
+   ```
 
 4. 验证连接：
 
@@ -85,9 +96,6 @@ pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 # 或者配置阿里云镜像源
 # pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
 
-# 或者配置腾讯云镜像源
-# pip config set global.index-url https://mirrors.cloud.tencent.com/pypi/simple/
-
 # 验证配置是否生效
 pip config list
 ```
@@ -110,14 +118,21 @@ source .venv/bin/activate
 
 ### 下载并安装 SDK
 
-下载最新的 SDK 包并安装：
+从github的Release下载最新的 SDK 包并安装：
 
 ```bash
 # 安装 whl 包
 pip install x2robot-1.0.0-py3-none-any.whl
 ```
 
-## 快速开始
+### 卸载SDK
+
+更新SDK版本时需要将之前版本SDK卸载，注意卸载也需要在SDK虚拟环境中执行
+
+```
+# 卸载x2robot，假设你之前的版本是v0.1.8
+pip uninstall x2robot-0.1.8-py3-none-any.whl
+```
 
 ### 第一个程序 - 连接测试
 
@@ -155,8 +170,8 @@ if __name__ == "__main__":
 python3 check_connect.py --server 192.168.10.1:50051
 
 # 预期输出：
-# 连接到 X2Robot SDK 服务器成功！
-# 响应负载：[Pong to: Hello, X2Robot!]
+# Connection to X2Robot SDK server successful!
+# Response payload:[Pong to: Hello, X2Robot!]
 ```
 
 ### 运行示例
@@ -171,12 +186,95 @@ python3 check_connect.py --server 192.168.10.1:50051
 
 代码示例请查看 [示例目录](examples/)。
 
+## 采集数据并转换成Lerobot格式的数据
+
+请参考[数据采集示例](examples/data_collection_example.py)和[转换成lerobot数据的脚本](tools/convert_to_lerobot.py)
+
+convert_to_lerobot.py使用示例
+
+```bash
+python3 tools/convert_to_lerobot.py \
+    --input-dir collected_data \
+    --output-dir ./lerobot_data \
+    --repo-id my_robot/dataset \
+    --robot-type quanta_x1 \
+    --use-videos
+
+```
+
 ## 常见问题
 
-### 如何连接机器人？
+### Q1：执行示例代码导包报错？
+
+如下图所示：
+
+![图片](docs/Q1.png)
+
+这种情况一般是没有source 虚拟环境，用户请根据自己虚拟环境安装目录，执行以下命令：
+
+```bash
+source .venv/bin/activate
+```
+
+### Q2：运行回放脚本报错， 运行推理脚本报错
+
+A:
+
+1. 在采的数据没问题的情况下，运行回放脚本报错，可能是当前模式为数采模式，切换成空闲模式才能回放
+2. 推理脚本的运行也需要切换到空闲模式下，才能运行成功，否则报错如下图所示：
+
+![图片](docs/Q2.jpeg)
+用主臂切换成空闲模式才能运行成功。
+
+### Q3：建图后，给出目标点定位导航，机器人不移动，
+
+A：
+执行定位导航时，机器人不移动， 有时候会报错，如下图所示：
+![图片](docs/Q3.jpeg)
+机器人为了保证定位导航的准确性，要求建图过程中移动距离必须达到 3.5 m 或旋转角度达到 210 度才会认为地图有效！建议执行开始建图后，在空旷场地下前后充分移动， 再结束建图， 参考示例代码chasisc_control.py。
+将control-mode切换成map，会执行先建图再用相对定位的方式导航到目标点
+
+```bash
+python3 chassis_control.py --server 192.168.10.11:50051 --control-mode map
+```
+
+### Q4：运行中过程中机器人双臂完全掉电
+
+A:
+目前的机制是，整机电量低于7%时，手臂会优先掉电，手臂关节电机全部自动松闸，建议控制的程序中添加实时监控电量，获取当前电量的接口用法参考示例代码system.py：
 
 ```python
-from x2robot import connect
-
-robot = connect('x2://localhost:50051')
+result = robot.system.get_dynamic_info()
+print(f"dynamic_info:{result.power_status.value}")
 ```
+
+### Q5：运行报错 Connection reset by peer？
+
+A:
+
+有3种情况会导致断连：
+
+1. 无线连接控制时，数据传送量太大，网络延迟过高会导致连接报错，建议高频控制时用有线连接。
+2. 有线连接采数场景下，数据传输量大，采集的数据写入文件如果处理不及时会导致连接中断。建议用户PC尽量关掉其他不需要的进程，如果出现中断，请重试。
+3. 推理模式下，推理数据下发量也较大，会导致如下图所示报错。
+
+![图片](docs/Q5.jpeg)
+推理可以再次运行脚本 start_sdk_ex001.sh的脚本时，会延续上次中断的推理流程。
+
+### Q6：建图结束保存地图失败
+
+建图结束，保存地图提示“map save failed”
+
+![Image](docs/Q6.png)
+
+A:
+
+和Q3一样的原因，机器人为了保证定位导航的准确性，要求建图过程中移动距离必须达到 3.5 m 或旋转角度达到 210 度才会认为地图有效！建议执行开始建图后，在空旷场地下前后充分移动， 再结束建图。
+
+## 开发注意事项
+
+- 版本兼容：请使用匹配的固件和SDK版本
+- 环境限制：请在满足要求的软件环境下运行SDK
+- 频率限制：调用控制接口的频率不要超过200HZ
+- 规格限制：调用控制接口的参数不得超过各关节的位置限制规格
+- 异常处理：请正确处理接口异常，调用接口出现问题时请参考FAQ或者联系技术解决
