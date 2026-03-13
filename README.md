@@ -172,13 +172,37 @@ python3 check_connect.py --server 192.168.10.1:50051
 # Response payload:[Pong to: Hello, X2Robot!]
 ```
 
+### Confirm network proxy is disabled
+
+In one terminal, run the camera image acquisition example script: <https://github.com/X-Square-Robot/sdk_robot/blob/main/examples/camera.py>
+
+```bash
+python3 camera.py head rgb-stream --server 192.168.10.1:50051
+```
+
+In another terminal, run:
+
+```bash
+sudo netstat -anp | grep 50051
+```
+
+Confirm that only the process named python3 has created the TCP connection on port 50051.
+![Image](docs/no_proxy.png)
+If other processes have also created connections on port 50051, for example:
+![Image](docs/has_proxy.png)
+You need to close that process first to ensure the network proxy is disabled. Otherwise, connection interruptions may occur during use.
+
 ### Run Examples
 
 See [Examples README](examples/README.md) for detailed examples.
 
 ## API Documentation
 
-See [API Documentation](docs/API_Quanta_X1.md) for complete API reference.
+See API documentation for complete reference:
+
+- Quanta X1 Pro: [API Documentation](docs/API_Quanta_X1.md)
+- Quanta X2: [API Documentation](docs/API_Quanta_X2.md)
+- Desktop 6-axis arm series: [API Documentation](docs/API_Desktop.md)
 
 ## Examples
 
@@ -186,18 +210,22 @@ See [Examples](examples/) for code examples.
 
 ## Collect Data and Convert to Lerobot Format
 
+Users can customize the data pipeline:
+
+- (1) modify the data collection code under `examples\data_collection` directory to collect only the fields needed.
+- (2) edit `tools/convert_to_lerobot.py` (e.g., `ROBOT_DATA_CONFIG`, `state_source_mapping`, `action_source_mapping`) to define what data gets converted.
+
 Please refer to the [data collection example](examples/data_collection_example.py) and the [convert to Lerobot format script](tools/convert_to_lerobot.py).
 
-convert_to_lerobot.py usage example:
+For convert_to_lerobot.py usage, see the [LeRobot format conversion script documentation](tools/README.md).
 
-```bash
-python3 tools/convert_to_lerobot.py \
-    --input-dir collected_data \
-    --output-dir ./lerobot_data \
-    --repo-id my_robot/dataset \
-    --robot-type quanta_x1 \
-    --use-videos
-```
+## Samples
+
+We provide a simple sample to demonstrate the SDK inference workflow and interaction.
+For now, we only provide samples for the following models:
+
+- Quanta X1 Pro: [SDK inference](samples/quanta_x1/README.md) sample
+- Desktop:
 
 ## FAQ
 
@@ -247,16 +275,12 @@ print(f"dynamic_info:{result.power_status.value}")
 
 ### Q5: Connection reset by peer error during operation
 
-A:
-
-There are 3 situations that can cause disconnection:
-
-1. When controlling via wireless connection, excessive data transfer and high network latency can cause connection errors. It is recommended to use wired connection for high-frequency control.
-2. In wired connection data collection scenarios, large data transfer and untimely writing of collected data to files can cause connection interruption. It is recommended to close other unnecessary processes on the user PC. If interruption occurs, please retry.
-3. In inference mode, the inference data transfer volume is also large, which can cause errors as shown below.
-
+If you encounter connection anomalies as shown below when using the SDK:
 ![Image](docs/Q5.jpeg)
-When running the start_sdk_ex001.sh script again, it will continue the previously interrupted inference process.
+
+A:
+Please check your local proxy settings and ensure the proxy is disabled. For proxy troubleshooting, refer to [Confirm network proxy is disabled](#confirm-network-proxy-is-disabled).
+Some enterprise endpoint security software (e.g., qzhddr) forces all external network connections through a proxy. Under high-frequency, high-traffic data transfer scenarios, such proxies may have insufficient performance, leading to connection timeouts or interruptions. Temporarily disable the proxy during SDK testing or use to rule out network environment impact on connection stability.
 
 ### Q6: Map save failed when mapping ends
 
@@ -265,8 +289,23 @@ When mapping ends, saving the map shows "map save failed".
 ![Image](docs/Q6.png)
 
 A:
-
 Same reason as Q3: To ensure positioning and navigation accuracy, the robot requires that during mapping the movement distance must reach 3.5 m or the rotation angle must reach 210 degrees for the map to be considered valid. It is recommended to move back and forth sufficiently in an open area after starting mapping, then end mapping.
+
+### Q7: Error occurs when running convert_to_lerobot.py script: "File exists 'lerobot_data' "?
+
+![Image](docs/file_exists_error.png)
+
+A:
+The specified output directory `lerobot_data` already exists. Please specify a different output directory or delete/rename the existing directory.
+
+### Q8: "Task operation failed" when switching SDK work mode?
+
+When controlling or during data playback, the following error appears:
+
+![Image](docs/sdk_mode_failed.PNG)
+
+A:
+The robot is currently in another work mode. Switch to idle mode in the master UI.
 
 ## Development Notes
 

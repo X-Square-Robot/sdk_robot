@@ -1222,7 +1222,7 @@ class DataCollector:
         """Collect VR left arm pose control command"""
         print("Starting VR left arm pose control command collection...")
         try:
-            self._collect_generic_stream('vr_left_arm_pose_commands', self.robot.action_data_collection.get_vr_left_arm_pose_commands)  # Placeholder
+            self._collect_generic_stream('vr_left_arm_pose_commands', self.robot.action_data_collection.get_vr_left_arm_pose_stream)  # Placeholder
         except Exception as e:
             print(f"VR left arm pose control command collection failed: {e}")
             raise
@@ -1231,7 +1231,7 @@ class DataCollector:
         """Collect VR right arm pose control command"""
         print("Starting VR right arm pose control command collection...")
         try:
-            self._collect_generic_stream('vr_right_arm_pose_commands', self.robot.action_data_collection.get_vr_right_arm_pose_commands)  # Placeholder
+            self._collect_generic_stream('vr_right_arm_pose_commands', self.robot.action_data_collection.get_vr_right_arm_pose_stream)  # Placeholder
         except Exception as e:
             print(f"VR right arm pose control command collection failed: {e}")
             raise
@@ -1240,7 +1240,7 @@ class DataCollector:
         """Collect VR left gripper joint control command"""
         print("Starting VR left gripper joint control command collection...")
         try:
-            self._collect_generic_stream('vr_left_gripper_joint_commands', self.robot.action_data_collection.get_vr_left_gripper_joint_commands)  # Placeholder
+            self._collect_generic_stream('vr_left_gripper_joint_commands', self.robot.action_data_collection.get_vr_left_gripper_joint_state_stream)  # Placeholder
         except Exception as e:
             print(f"VR left gripper joint control command collection failed: {e}")
             raise
@@ -1249,7 +1249,7 @@ class DataCollector:
         """Collect VR right gripper joint control command"""
         print("Starting VR right gripper joint control command collection...")
         try:
-            self._collect_generic_stream('vr_right_arm_pose_commands', self.robot.action_data_collection.get_vr_right_gripper_joint_commands)  # Placeholder
+            self._collect_generic_stream('vr_right_gripper_joint_commands', self.robot.action_data_collection.get_vr_right_gripper_joint_state_stream)  # Placeholder
         except Exception as e:
             print(f"VR right gripper joint control command collection failed: {e}")
             raise

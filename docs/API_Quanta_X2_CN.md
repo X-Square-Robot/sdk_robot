@@ -45,6 +45,8 @@
    * [get_joint_states](#leftarmcontroller-get_joint_states)
    * [get_end_pose](#leftarmcontroller-get_end_pose)
    * [reset](#leftarmcontroller-reset)
+   * [get_wrench_ext_world](#leftarmcontroller-get_wrench_ext_world)
+   * [get_wrench_ext_local](#leftarmcontroller-get_wrench_ext_local)
    * [get_joint_states_stream](#leftarmcontroller-get_joint_states_stream)
    * [get_end_pose_stream](#leftarmcontroller-get_end_pose_stream)
 * [LeftGripperController](#leftgrippercontroller)
@@ -72,6 +74,8 @@
    * [get_joint_states](#rightarmcontroller-get_joint_states)
    * [get_end_pose](#rightarmcontroller-get_end_pose)
    * [reset](#rightarmcontroller-reset)
+   * [get_wrench_ext_world](#rightarmcontroller-get_wrench_ext_world)
+   * [get_wrench_ext_local](#rightarmcontroller-get_wrench_ext_local)
    * [get_joint_states_stream](#rightarmcontroller-get_joint_states_stream)
    * [get_end_pose_stream](#rightarmcontroller-get_end_pose_stream)
 * [RightGripperController](#rightgrippercontroller)
@@ -84,12 +88,13 @@
 * [RobotControl](#robotcontrol)
    * [set_manipulator_control_mode](#robotcontrol-set_manipulator_control_mode)
    * [get_manipulator_control_mode](#robotcontrol-get_manipulator_control_mode)
+   * [homing](#robotcontrol-homing)
+   * [emergency_stop](#robotcontrol-emergency_stop)
+   * [recover_emergency_stop](#robotcontrol-recover_emergency_stop)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
-   * [emergency_stop](#system-emergency_stop)
    * [get_static_info](#system-get_static_info)
    * [get_dynamic_info](#system-get_dynamic_info)
-   * [quit_sdk_mode](#system-quit_sdk_mode)
 * [Tof](#tof)
    * [get_chassis_tof1](#tof-get_chassis_tof1)
    * [get_chassis_tof2](#tof-get_chassis_tof2)
@@ -599,12 +604,12 @@ def set_pose(head_pose: HeadPose, timeout) -> ExecutionResult
 
 控制头部位姿（偏航角和俯仰角）
 
-Quanta_X2机型
+适用于量子2号机型
 
 * `上限: [0.87, 1.57]`
 * `下限: [-0.52, -1.57]`
 
-Quanta_X1机型
+适用于量子1号机型
 
 * `上限: [0.9, 1.20]`
 * `下限: [-0.06, -1.20]`
@@ -782,12 +787,12 @@ def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionRe
 
 控制关节角度（必须先设置JOINT_POSITIONS模式）
 
-Quanta_X2机型
+适用于量子2号机型
 
 * `上限: [3.1067, 2.0944, 3.1067, 1.0472, 3.1067, 1.0472, 1.5708]`
 * `下限: [-3.1067, -2.0944, -3.1067, -2.5307, -3.1067, -1.0472, -1.5708]`
 
-Quanta_X1机型
+适用于量子1号和桌面主从机型
 
 * `上限: [2.792, 3.44, 3.14, 1.57, 1.4, 1.745]`
 * `下限: [-2.792, 0.0, -3.14, -1.57, -1.4, -1.745]`
@@ -810,12 +815,12 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 控制末端执行器位姿（必须先设置END_POSE模式）
 
-Quanta_X2机型
+适用于量子2号机型
 
 * `上限: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
 * `下限: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
 
-Quanta_X1机型
+适用于量子1号和桌面主从机型
 
 * `上限: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
 * `下限: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
@@ -892,6 +897,46 @@ def reset(timeout) -> ExecutionResult
 
 ---
 
+<h4 id="leftarmcontroller-get_wrench_ext_world">get_wrench_ext_world</h4>
+
+```python
+def get_wrench_ext_world(timeout) -> _geometry_msgs__.WrenchStamped
+```
+
+Get wrench ext world
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `WrenchStamped`
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `wrench` (`Wrench`)
+
+---
+
+<h4 id="leftarmcontroller-get_wrench_ext_local">get_wrench_ext_local</h4>
+
+```python
+def get_wrench_ext_local(timeout) -> _geometry_msgs__.WrenchStamped
+```
+
+Get wrench ext local
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `WrenchStamped`
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `wrench` (`Wrench`)
+
+---
+
 <h4 id="leftarmcontroller-get_joint_states_stream">get_joint_states_stream</h4>
 
 ```python
@@ -945,12 +990,12 @@ def set_position(gripper_position: GripperPosition, timeout) -> ExecutionResult
 
 控制夹爪开合程度
 
-Quanta_X2机型
+适用于量子2号机型
 
 * `上限: 25.2`
 * `下限: 0.0`
 
-Quanta_X1机型
+适用于量子1号机型
 
 * `上限: 4.5`
 * `下限: 0.0`
@@ -1237,12 +1282,12 @@ def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionRe
 
 控制关节角度（必须先设置JOINT_POSITIONS模式）
 
-Quanta_X2机型
+适用于量子2号机型
 
 * `上限: [3.1067, 2.0944, 3.1067, 1.0472, 3.1067, 1.0472, 1.5708]`
 * `下限: [-3.1067, -2.0944, -3.1067, -2.5307, -3.1067, -1.0472, -1.5708]`
 
-Quanta_X1机型
+适用于量子1号和桌面主从机型
 
 * `上限: [2.792, 3.44, 3.14, 1.57, 1.4, 1.745]`
 * `下限: [-2.792, 0.0, -3.14, -1.57, -1.4, -1.745]`
@@ -1339,6 +1384,46 @@ def reset(timeout) -> ExecutionResult
 
 ---
 
+<h4 id="rightarmcontroller-get_wrench_ext_world">get_wrench_ext_world</h4>
+
+```python
+def get_wrench_ext_world(timeout) -> _geometry_msgs__.WrenchStamped
+```
+
+Get wrench ext world
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `WrenchStamped`
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `wrench` (`Wrench`)
+
+---
+
+<h4 id="rightarmcontroller-get_wrench_ext_local">get_wrench_ext_local</h4>
+
+```python
+def get_wrench_ext_local(timeout) -> _geometry_msgs__.WrenchStamped
+```
+
+Get wrench ext local
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `WrenchStamped`
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `wrench` (`Wrench`)
+
+---
+
 <h4 id="rightarmcontroller-get_joint_states_stream">get_joint_states_stream</h4>
 
 ```python
@@ -1392,12 +1477,12 @@ def set_position(gripper_position: GripperPosition, timeout) -> ExecutionResult
 
 控制夹爪开合程度
 
-Quanta_X2机型
+适用于量子2号机型
 
 * `上限: 25.2`
 * `下限: 0.0`
 
-Quanta_X1机型
+适用于量子1号机型
 
 * `上限: 4.5`
 * `下限: 0.0`
@@ -1520,6 +1605,60 @@ def get_manipulator_control_mode(timeout) -> ManipulatorControlModeParam
 
 ---
 
+<h4 id="robotcontrol-homing">homing</h4>
+
+```python
+def homing(timeout) -> ExecutionResult
+```
+
+机器人归位，所有关节将归位到初始位置
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="robotcontrol-emergency_stop">emergency_stop</h4>
+
+```python
+def emergency_stop(timeout) -> ExecutionResult
+```
+
+紧急停止，请谨慎调用，仅在必要时使用
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="robotcontrol-recover_emergency_stop">recover_emergency_stop</h4>
+
+```python
+def recover_emergency_stop(timeout) -> ExecutionResult
+```
+
+从紧急停止中恢复，仅在紧急停止被调用时使用
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
 <h3 id="system">System</h3>
 
 <h4 id="system-set_work_mode">set_work_mode</h4>
@@ -1533,24 +1672,6 @@ def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 **参数:**
 
 * `robot_mode_param` ([`RobotModeParam`](#message-xrsdkrobotmodeparam))
-
-**返回:**
-
-* [`ExecutionResult`](#message-xrsdkexecutionresult)
-
----
-
-<h4 id="system-emergency_stop">emergency_stop</h4>
-
-```python
-def emergency_stop(timeout) -> ExecutionResult
-```
-
-紧急停止，请谨慎调用
-
-**参数:**
-
-* 无参数
 
 **返回:**
 
@@ -1591,24 +1712,6 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 **返回:**
 
 * [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo)
-
----
-
-<h4 id="system-quit_sdk_mode">quit_sdk_mode</h4>
-
-```python
-def quit_sdk_mode(timeout) -> ExecutionResult
-```
-
-SDK模式客户端跟踪的心跳
-
-**参数:**
-
-* 无参数
-
-**返回:**
-
-* [`ExecutionResult`](#message-xrsdkexecutionresult)
 
 ---
 
@@ -2611,6 +2714,7 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 | `CX001` (0) |  |
 | `CX002` (1) |  |
 | `EX001` (2) |  |
+| `DESKTOP` (3) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

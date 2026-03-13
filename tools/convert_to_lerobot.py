@@ -186,6 +186,216 @@ ROBOT_DATA_CONFIG = {
             }
         }
     },
+    "quanta_x2": {
+        # quanta_x2 无 master 数据，使用 left/right 命名
+        "action_order": [
+            "left_ee_cartesian_pos",   # 3 dimensions - Left arm end effector position
+            "left_ee_rotation",        # 3 dimensions - Left arm end effector rotation (quaternion to euler)
+            "follow_left_gripper",    # 1 dimension - Left gripper position
+            "right_ee_cartesian_pos",  # 3 dimensions - Right arm end effector position
+            "right_ee_rotation",      # 3 dimensions - Right arm end effector rotation (quaternion to euler)
+            "follow_right_gripper",  # 1 dimension - Right gripper position
+            "head_rotation",          # 2 dimensions - Head motor angle (pitch, yaw)
+            "waist",                  # 4 dimensions - Waist joint positions (no lift)
+            "velocity_decomposed_odom",  # 3 dimensions - Odometry (x, y, yaw)
+        ],
+        "state_order": [
+            "left_ee_cartesian_pos",
+            "left_ee_rotation",
+            "follow_left_gripper",
+            "right_ee_cartesian_pos",
+            "right_ee_rotation",
+            "follow_right_gripper",
+            "head_rotation",
+            "waist",                   # 4 dimensions - Waist joint states
+            "velocity_decomposed_odom",
+        ],
+        "state_source_mapping": {
+            "left_ee_cartesian_pos": {
+                "source": "left_arm_end_pose",
+                "type": "position",
+                "dim": 3
+            },
+            "left_ee_rotation": {
+                "source": "left_arm_end_pose",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_left_gripper": {
+                "source": "left_gripper_position",
+                "type": "gripper_position",
+                "dim": 1
+            },
+            "right_ee_cartesian_pos": {
+                "source": "right_arm_end_pose",
+                "type": "position",
+                "dim": 3
+            },
+            "right_ee_rotation": {
+                "source": "right_arm_end_pose",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_right_gripper": {
+                "source": "right_gripper_position",
+                "type": "gripper_position",
+                "dim": 1
+            },
+            "head_rotation": {
+                "source": "head_joint_states",
+                "type": "joint_positions",
+                "dim": 2,
+                "index": [0, 1]
+            },
+            "waist": {
+                "source": "waist_joint_states",
+                "type": "joint_positions",
+                "dim": 4,
+                "index": [0, 1, 2, 3]
+            },
+            "velocity_decomposed_odom": {
+                "source": "odometry",
+                "type": "odom_xy_yaw",
+                "dim": 3
+            }
+        },
+        "action_source_mapping": {
+            "left_ee_cartesian_pos": {
+                "source": "left_arm_end_pose_action",
+                "type": "position",
+                "dim": 3
+            },
+            "left_ee_rotation": {
+                "source": "left_arm_end_pose_action",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_left_gripper": {
+                "source": "left_gripper_position_action",
+                "type": "gripper_position",
+                "dim": 1
+            },
+            "right_ee_cartesian_pos": {
+                "source": "right_arm_end_pose_action",
+                "type": "position",
+                "dim": 3
+            },
+            "right_ee_rotation": {
+                "source": "right_arm_end_pose_action",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_right_gripper": {
+                "source": "right_gripper_position_action",
+                "type": "gripper_position",
+                "dim": 1
+            },
+            "head_rotation": {
+                "source": "head_actions",
+                "type": "joint_positions",
+                "dim": 2,
+                "index": [0, 1]
+            },
+            "waist": {
+                "source": "waist_actions",
+                "type": "joint_positions",
+                "dim": 4,
+                "index": [0, 1, 2, 3]
+            },
+            "velocity_decomposed_odom": {
+                "source": "odometry_action",
+                "type": "odom_xy_yaw",
+                "dim": 3
+            }
+        }
+    },
+    "desktop": {
+        # Desktop: arm + gripper only, no waist, head, or chassis/odometry
+        "action_order": [
+            "left_ee_cartesian_pos",   # 3 dimensions - Left arm end effector position
+            "left_ee_rotation",        # 3 dimensions - Left arm end effector rotation (quaternion to euler)
+            "follow_left_gripper",     # 1 dimension - Left gripper position
+            "right_ee_cartesian_pos",  # 3 dimensions - Right arm end effector position
+            "right_ee_rotation",       # 3 dimensions - Right arm end effector rotation (quaternion to euler)
+            "follow_right_gripper",    # 1 dimension - Right gripper position
+        ],
+        "state_order": [
+            "left_ee_cartesian_pos",
+            "left_ee_rotation",
+            "follow_left_gripper",
+            "right_ee_cartesian_pos",
+            "right_ee_rotation",
+            "follow_right_gripper",
+        ],
+        "state_source_mapping": {
+            "left_ee_cartesian_pos": {
+                "source": "left_arm_end_pose",
+                "type": "position",
+                "dim": 3
+            },
+            "left_ee_rotation": {
+                "source": "left_arm_end_pose",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_left_gripper": {
+                "source": "left_gripper_joint_states",
+                "type": "joint_positions",
+                "dim": 1,
+                "index": 0
+            },
+            "right_ee_cartesian_pos": {
+                "source": "right_arm_end_pose",
+                "type": "position",
+                "dim": 3
+            },
+            "right_ee_rotation": {
+                "source": "right_arm_end_pose",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_right_gripper": {
+                "source": "right_gripper_joint_states",
+                "type": "joint_positions",
+                "dim": 1,
+                "index": 0
+            },
+        },
+        "action_source_mapping": {
+            "left_ee_cartesian_pos": {
+                "source": "left_arm_end_pose_action",
+                "type": "position",
+                "dim": 3
+            },
+            "left_ee_rotation": {
+                "source": "left_arm_end_pose_action",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_left_gripper": {
+                "source": "left_gripper_actions",
+                "type": "joint_positions",
+                "dim": 1,
+                "index": 0
+            },
+            "right_ee_cartesian_pos": {
+                "source": "right_arm_end_pose_action",
+                "type": "position",
+                "dim": 3
+            },
+            "right_ee_rotation": {
+                "source": "right_arm_end_pose_action",
+                "type": "orientation_euler",
+                "dim": 3
+            },
+            "follow_right_gripper": {
+                "source": "right_gripper_actions",
+                "type": "joint_positions",
+                "dim": 1,
+                "index": 0
+            },
+        }
+    },
     # Can add the configuration for other machine types here
     # "other_model": {
     #     "action_order": [...],  # action field order list
@@ -218,6 +428,15 @@ def get_robot_config(robot_type: str) -> Dict[str, Any]:
     # If no match is found, return the default configuration
     print(f"  ⚠️  Warning: No configuration found for machine type '{robot_type}', using default configuration (quanta_x1)")
     return ROBOT_DATA_CONFIG[DEFAULT_ROBOT_TYPE]
+
+
+def get_robot_config_key(robot_type: str) -> str:
+    """Get the canonical config key for robot_type (for consistency check)."""
+    robot_type_lower = robot_type.lower()
+    for key in ROBOT_DATA_CONFIG.keys():
+        if key.lower() in robot_type_lower or robot_type_lower in key.lower():
+            return key
+    return DEFAULT_ROBOT_TYPE
 
 
 def quaternion_to_euler(x: float, y: float, z: float, w: float) -> tuple:
@@ -277,12 +496,16 @@ def extract_action_v3(frame: Dict[str, Any], robot_type: str = DEFAULT_ROBOT_TYP
         if action_field not in action_source_mapping:
             # If no configuration is found, use default value to fill
             dim = 0
-            if action_field == "master_left_ee_cartesian_pos" or action_field == "master_right_ee_cartesian_pos":
+            if action_field in ("master_left_ee_cartesian_pos", "master_right_ee_cartesian_pos",
+                               "left_ee_cartesian_pos", "right_ee_cartesian_pos"):
                 dim = 3
-            elif action_field == "master_left_ee_rotation" or action_field == "master_right_ee_rotation":
+            elif action_field in ("master_left_ee_rotation", "master_right_ee_rotation",
+                                  "left_ee_rotation", "right_ee_rotation"):
                 dim = 3
             elif action_field == "follow_left_gripper" or action_field == "follow_right_gripper" or action_field == "height":
                 dim = 1
+            elif action_field == "waist":
+                dim = 4
             elif action_field == "head_rotation":
                 dim = 2
             elif action_field == "velocity_decomposed_odom":
@@ -323,6 +546,18 @@ def extract_action_v3(frame: Dict[str, Any], robot_type: str = DEFAULT_ROBOT_TYP
                 action_parts.extend([roll, pitch, yaw])
             else:
                 action_parts.extend([0.0, 0.0, 0.0])
+        
+        elif source_type == "gripper_position":
+            # Extract scalar position from gripper_position_action {position: value}
+            if source_name in action_dict:
+                data = action_dict[source_name]
+                pos = data.get('position', 0.0)
+                if isinstance(pos, (int, float)):
+                    action_parts.append(float(pos))
+                else:
+                    action_parts.append(0.0)
+            else:
+                action_parts.append(0.0)
         
         elif source_type == "joint_positions":
             # Extract joint positions from actions
@@ -413,9 +648,13 @@ def extract_joint_names_from_v3_episode(episode_data: Dict[str, Any]) -> List[st
     if 'right_arm' in joint_names_dict:
         joint_names_list.extend(joint_names_dict['right_arm'])
     
-    # lift
+    # lift (quanta_x1)
     if 'lift' in joint_names_dict:
         joint_names_list.extend(joint_names_dict['lift'])
+    
+    # waist (quanta_x2)
+    if 'waist' in joint_names_dict:
+        joint_names_list.extend(joint_names_dict['waist'])
     
     # left_gripper
     if 'left_gripper' in joint_names_dict:
@@ -472,9 +711,11 @@ def extract_state_v3(frame: Dict[str, Any], joint_indices: Optional[List[int]] =
         if state_field not in state_source_mapping:
             # If no configuration is found, use default value to fill
             dim = 0
-            if state_field == "master_left_ee_cartesian_pos" or state_field == "master_right_ee_cartesian_pos":
+            if state_field in ("master_left_ee_cartesian_pos", "master_right_ee_cartesian_pos",
+                              "left_ee_cartesian_pos", "right_ee_cartesian_pos"):
                 dim = 3
-            elif state_field == "master_left_ee_rotation" or state_field == "master_right_ee_rotation":
+            elif state_field in ("master_left_ee_rotation", "master_right_ee_rotation",
+                                 "left_ee_rotation", "right_ee_rotation"):
                 dim = 3
             elif state_field == "follow_left_gripper" or state_field == "follow_right_gripper" or state_field == "height":
                 dim = 1
@@ -518,6 +759,18 @@ def extract_state_v3(frame: Dict[str, Any], joint_indices: Optional[List[int]] =
                 state_parts.extend([roll, pitch, yaw])
             else:
                 state_parts.extend([0.0, 0.0, 0.0])
+        
+        elif source_type == "gripper_position":
+            # Extract scalar position from gripper_position {position: value}
+            if source_name in obs:
+                data = obs[source_name]
+                pos = data.get('position', 0.0)
+                if isinstance(pos, (int, float)):
+                    state_parts.append(float(pos))
+                else:
+                    state_parts.append(0.0)
+            else:
+                state_parts.append(0.0)
         
         elif source_type == "joint_positions":
             # Extract joint positions from joint_states
@@ -823,11 +1076,19 @@ def _has_action_field(episode_data: Dict[str, Any]) -> bool:
 
 
 def _is_v3_format(frame: Dict[str, Any]) -> bool:
-    """Detect if it is V3 format (latest format)"""
-    if 'observation' in frame and 'right_arm_joint_states' in frame['observation']:
-        if 'action' in frame and isinstance(frame['action'], dict):
-            if 'master_left_arm_end_pose_action' in frame['action']:
-                return True
+    """Detect if it is V3 format (latest format).
+    Supports both quanta_x1 (master_* fields) and quanta_x2 (no master prefix).
+    """
+    if 'observation' not in frame or 'action' not in frame or not isinstance(frame['action'], dict):
+        return False
+    obs = frame['observation']
+    act = frame['action']
+    # quanta_x1: right_arm_joint_states + master_left_arm_end_pose_action
+    if 'right_arm_joint_states' in obs and 'master_left_arm_end_pose_action' in act:
+        return True
+    # quanta_x2: left_arm_end_pose + left_arm_end_pose_action (no master)
+    if 'left_arm_end_pose' in obs and 'left_arm_end_pose_action' in act:
+        return True
     return False
 
 
@@ -1336,18 +1597,28 @@ def create_lerobot_dataset(
                 action_names.extend(["master_left_ee_pos_x", "master_left_ee_pos_y", "master_left_ee_pos_z"])
             elif action_name == "master_left_ee_rotation":
                 action_names.extend(["master_left_ee_roll", "master_left_ee_pitch", "master_left_ee_yaw"])
+            elif action_name == "left_ee_cartesian_pos":
+                action_names.extend(["left_ee_pos_x", "left_ee_pos_y", "left_ee_pos_z"])
+            elif action_name == "left_ee_rotation":
+                action_names.extend(["left_ee_roll", "left_ee_pitch", "left_ee_yaw"])
             elif action_name == "follow_left_gripper":
                 action_names.append("follow_left_gripper")
             elif action_name == "master_right_ee_cartesian_pos":
                 action_names.extend(["master_right_ee_pos_x", "master_right_ee_pos_y", "master_right_ee_pos_z"])
             elif action_name == "master_right_ee_rotation":
                 action_names.extend(["master_right_ee_roll", "master_right_ee_pitch", "master_right_ee_yaw"])
+            elif action_name == "right_ee_cartesian_pos":
+                action_names.extend(["right_ee_pos_x", "right_ee_pos_y", "right_ee_pos_z"])
+            elif action_name == "right_ee_rotation":
+                action_names.extend(["right_ee_roll", "right_ee_pitch", "right_ee_yaw"])
             elif action_name == "follow_right_gripper":
                 action_names.append("follow_right_gripper")
             elif action_name == "head_rotation":
                 action_names.extend(["head_pitch", "head_yaw"])
             elif action_name == "height":
                 action_names.append("height")
+            elif action_name == "waist":
+                action_names.extend(["waist_joint_0", "waist_joint_1", "waist_joint_2", "waist_joint_3"])
             elif action_name == "velocity_decomposed_odom":
                 action_names.extend(["odom_x", "odom_y", "odom_yaw"])
         
@@ -1408,7 +1679,7 @@ def convert_dataset(args):
     # Load metadata
     metadata = load_dataset_metadata(input_dir)
     print(f"\nDataset information:")
-    print(f"  Robot type: {metadata['robot_type']}")
+    print(f"  Robot type: {args.robot_type}")
     print(f"  Original FPS: {metadata['fps']}")
     print(f"  Joint number: {len(metadata.get('joint_names', []))}")
     print(f"  Camera number: {len(metadata['camera_names'])}")
@@ -1417,6 +1688,18 @@ def convert_dataset(args):
     # Select episodes (first parse, then extract joint_names from selected episodes)
     selected_episodes = parse_episode_selection(args.episodes, len(metadata['episodes']))
     
+    # Check robot_type consistency with episode model (exact match, case-insensitive)
+    for ep_idx in selected_episodes:
+        if ep_idx >= len(metadata['episodes']):
+            continue
+        ep_model = metadata['episodes'][ep_idx].get('model', '')
+        if ep_model.lower() != args.robot_type.lower():
+            print(f"\nError: robot_type mismatch!")
+            print(f"  --robot-type: {args.robot_type}")
+            print(f"  Episode {ep_idx} model: {ep_model}")
+            print(f"  Please use --robot-type \"{ep_model}\" to match the episode data.")
+            return 1
+    
     # Select joints
     # Extract complete joint_names from episodes, rather than relying on metadata (metadata may be incomplete)
     joint_names = []
@@ -1424,7 +1707,7 @@ def convert_dataset(args):
     try:
         # Extract joint_names from selected episodes, if not selected, extract from all episodes
         episode_indices_to_check = selected_episodes[:3] if selected_episodes else list(range(min(3, len(metadata['episodes']))))
-        print(f"  检查episodes以提取关节名称: {episode_indices_to_check}")
+        print(f"  Checking episodes to extract joint names: {episode_indices_to_check}")
         
         for ep_idx in episode_indices_to_check:
             try:
@@ -1651,18 +1934,28 @@ def convert_dataset(args):
                                 state_names_list.extend(["master_left_ee_pos_x", "master_left_ee_pos_y", "master_left_ee_pos_z"])
                             elif state_field == "master_left_ee_rotation":
                                 state_names_list.extend(["master_left_ee_roll", "master_left_ee_pitch", "master_left_ee_yaw"])
+                            elif state_field == "left_ee_cartesian_pos":
+                                state_names_list.extend(["left_ee_pos_x", "left_ee_pos_y", "left_ee_pos_z"])
+                            elif state_field == "left_ee_rotation":
+                                state_names_list.extend(["left_ee_roll", "left_ee_pitch", "left_ee_yaw"])
                             elif state_field == "follow_left_gripper":
                                 state_names_list.append("follow_left_gripper")
                             elif state_field == "master_right_ee_cartesian_pos":
                                 state_names_list.extend(["master_right_ee_pos_x", "master_right_ee_pos_y", "master_right_ee_pos_z"])
                             elif state_field == "master_right_ee_rotation":
                                 state_names_list.extend(["master_right_ee_roll", "master_right_ee_pitch", "master_right_ee_yaw"])
+                            elif state_field == "right_ee_cartesian_pos":
+                                state_names_list.extend(["right_ee_pos_x", "right_ee_pos_y", "right_ee_pos_z"])
+                            elif state_field == "right_ee_rotation":
+                                state_names_list.extend(["right_ee_roll", "right_ee_pitch", "right_ee_yaw"])
                             elif state_field == "follow_right_gripper":
                                 state_names_list.append("follow_right_gripper")
                             elif state_field == "head_rotation":
                                 state_names_list.extend(["head_pitch", "head_yaw"])
                             elif state_field == "height":
                                 state_names_list.append("height")
+                            elif state_field == "waist":
+                                state_names_list.extend(["waist_joint_0", "waist_joint_1", "waist_joint_2", "waist_joint_3"])
                             elif state_field == "velocity_decomposed_odom":
                                 state_names_list.extend(["odom_x", "odom_y", "odom_yaw"])
                         
@@ -1685,25 +1978,35 @@ def convert_dataset(args):
                 state_names_list.extend(["master_left_ee_pos_x", "master_left_ee_pos_y", "master_left_ee_pos_z"])
             elif state_field == "master_left_ee_rotation":
                 state_names_list.extend(["master_left_ee_roll", "master_left_ee_pitch", "master_left_ee_yaw"])
+            elif state_field == "left_ee_cartesian_pos":
+                state_names_list.extend(["left_ee_pos_x", "left_ee_pos_y", "left_ee_pos_z"])
+            elif state_field == "left_ee_rotation":
+                state_names_list.extend(["left_ee_roll", "left_ee_pitch", "left_ee_yaw"])
             elif state_field == "follow_left_gripper":
                 state_names_list.append("follow_left_gripper")
             elif state_field == "master_right_ee_cartesian_pos":
                 state_names_list.extend(["master_right_ee_pos_x", "master_right_ee_pos_y", "master_right_ee_pos_z"])
             elif state_field == "master_right_ee_rotation":
                 state_names_list.extend(["master_right_ee_roll", "master_right_ee_pitch", "master_right_ee_yaw"])
+            elif state_field == "right_ee_cartesian_pos":
+                state_names_list.extend(["right_ee_pos_x", "right_ee_pos_y", "right_ee_pos_z"])
+            elif state_field == "right_ee_rotation":
+                state_names_list.extend(["right_ee_roll", "right_ee_pitch", "right_ee_yaw"])
             elif state_field == "follow_right_gripper":
                 state_names_list.append("follow_right_gripper")
             elif state_field == "head_rotation":
                 state_names_list.extend(["head_pitch", "head_yaw"])
             elif state_field == "height":
                 state_names_list.append("height")
+            elif state_field == "waist":
+                state_names_list.extend(["waist_joint_0", "waist_joint_1", "waist_joint_2", "waist_joint_3"])
             elif state_field == "velocity_decomposed_odom":
                 state_names_list.extend(["odom_x", "odom_y", "odom_yaw"])
         state_dim_detected = len(state_names_list)
         print(f"  ⚠️  Warning: Cannot detect state dimension, using default values: {state_dim_detected}")
     
     # Create LeRobot dataset
-    print(f"\n创建LeRobot数据集...")
+    print(f"\nCreating LeRobot dataset...")
     dataset = create_lerobot_dataset(
         output_dir=str(output_dir),
         repo_id=args.repo_id,
@@ -1923,7 +2226,9 @@ def main():
     args = parse_args()
     
     try:
-        convert_dataset(args)
+        result = convert_dataset(args)
+        if result is not None and result != 0:
+            return result
     except Exception as e:
         print(f"\nError: {e}")
         import traceback

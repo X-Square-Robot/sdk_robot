@@ -207,6 +207,8 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
 
     robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
 
+    robot_model = robot.get_robot_model()
+
     # Set robot control mode to joint position control
     print("Setting control mode to joint position control...")
     mode_param = ManipulatorControlModeParam(
@@ -220,21 +222,24 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
 
     print("✓ Control mode set successfully")
 
-    # Set chassis to velocity control mode
-    print("Setting chassis to velocity control mode...")
-    chassis_mode = ChassisControlModeParam(mode=ChassisControlMode.VELOCITY)
-    chassis_result = robot.chassis.set_control_mode(chassis_mode)
+    # Desktop has no chassis
+    chassis_controller = None
+    if robot_model != "desktop":
+        # Set chassis to velocity control mode
+        print("Setting chassis to velocity control mode...")
+        chassis_mode = ChassisControlModeParam(mode=ChassisControlMode.VELOCITY)
+        chassis_result = robot.chassis.set_control_mode(chassis_mode)
 
-    if not chassis_result.is_success:
-        print(f"Warning: Chassis control mode setting failed - {chassis_result.error_message}")
-    else:
-        print("✓ Chassis velocity control mode set successfully")
+        if not chassis_result.is_success:
+            print(f"Warning: Chassis control mode setting failed - {chassis_result.error_message}")
+        else:
+            print("✓ Chassis velocity control mode set successfully")
 
-    # Start chassis control thread (100Hz high-frequency control)
-    print("Starting chassis control thread...")
-    chassis_controller = ChassisController(robot)
-    chassis_controller.start()
-    print("✓ Chassis control thread started (50Hz)")
+        # Start chassis control thread (100Hz high-frequency control)
+        print("Starting chassis control thread...")
+        chassis_controller = ChassisController(robot)
+        chassis_controller.start()
+        print("✓ Chassis control thread started (50Hz)")
     
     frames = episode_data['frames']
     total_frames = len(frames)
@@ -247,10 +252,11 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
     for i, frame in enumerate(frames):
         try:
             # [Step 0] Update chassis target position (thread will continuously control)
-            target_odom = frame['observation'].get('odometry')
-            if target_odom:
-                chassis_controller.set_target_odom(target_odom)
-            
+            if chassis_controller is not None:
+                target_odom = frame['observation'].get('odometry')
+                if target_odom:
+                    chassis_controller.set_target_odom(target_odom)
+
             # Get joint states of each part from the new data format
             observation = frame.get('observation', {})
             
@@ -273,31 +279,48 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                     right_result = robot.right_arm.set_joint_positions(right_joint_msg)
                     if not right_result.is_success:
                         print(f"Warning: Right arm control failed - {right_result.error_message}")
-            
-            # Get left gripper position
-            left_gripper_joint_states = observation.get('left_gripper_joint_states')
-            if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
-                left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
-                if left_gripper_positions:
+
+            # [Step 3] Control grippers and head
+            if (robot_model == "quanta_x2"):
+                left_gripper_position = observation.get('left_gripper_position')
+                right_gripper_position = observation.get('right_gripper_position')
+                if left_gripper_position and right_gripper_position:
                     try:
-                        robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
+                        position = left_gripper_position['position']
+                        robot.left_gripper.set_position(GripperPosition(position=position))
                     except Exception as e:
                         if i == 0:
                             print(f"Warning: Left gripper control failed - {e}")
-            
-            # Get right gripper position
-            right_gripper_joint_states = observation.get('right_gripper_joint_states')
-            if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
-                right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
-                if right_gripper_positions:
                     try:
-                        robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
+                        position = right_gripper_position['position']
+                        robot.right_gripper.set_position(GripperPosition(position=position))
                     except Exception as e:
                         if i == 0:
                             print(f"Warning: Right gripper control failed - {e}")
-            
+            else:
+                # Get left gripper position
+                left_gripper_joint_states = observation.get('left_gripper_joint_states')
+                if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
+                    left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
+                    if left_gripper_positions:
+                        try:
+                            robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Left gripper control failed - {e}")
+                
+                # Get right gripper position
+                right_gripper_joint_states = observation.get('right_gripper_joint_states')
+                if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
+                    right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
+                    if right_gripper_positions:
+                        try:
+                            robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
+                        except Exception as e:
+                            if i == 0:
+                                print(f"Warning: Right gripper control failed - {e}")
+
             # Get lift/waist position
-            robot_model = robot.get_robot_model()
             if robot_model == "quanta_x1":
                 lift_joint_states = observation.get('lift_joint_states')
                 if lift_joint_states and 'positions' in lift_joint_states:
@@ -314,12 +337,12 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                     waist_positions = filter_nan_values(waist_joint_states['positions'])
                     if waist_positions:
                         try:
-                            robot.waist.set_joint_positions(JointPositions(positions=[waist_positions[0]]))
+                            robot.waist.set_joint_positions(JointPositions(positions=waist_positions))
                         except Exception as e:
                             if i == 0:
                                 print(f"Warning: Waist control failed - {e}")
-            else:
-                print(f"Warning: Unsupported robot model: {robot_model}")
+            elif robot_model == "desktop":
+                pass  # Desktop has no lift/waist
             
             # Get head position
             head_joint_states = observation.get('head_joint_states')
@@ -369,11 +392,12 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
             continue
     
     # Stop chassis control thread
-    chassis_controller.stop()
-    chassis_controller.join(timeout=1.0)
-    
+    if chassis_controller is not None:
+        chassis_controller.stop()
+        chassis_controller.join(timeout=1.0)
+
     elapsed = time.time() - start_time
-    print(f"\n\n✓ Replay completed! Time: {elapsed:.2f}s")
+    print(f"\n\n✓ Replay completed! Time: {elapsed:.2f}s, Number of frames replayed: {i+1}")
 
 
 def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
@@ -399,35 +423,40 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
     print("="*60)
 
     robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
-    
+
+    robot_model = robot.get_robot_model()
+
     # Set robot control mode to end pose control
     print("Setting control mode to end pose control...")
     mode_param = ManipulatorControlModeParam(
         mode=ManipulatorControlMode.MANIPULATOR_END_POSE
     )
     result = robot.robot_control.set_manipulator_control_mode(mode_param)
-    
+
     if not result.is_success:
         print(f"✗ Failed to set control mode: {result.error_message}")
         return
-    
+
     print("✓ Control mode set successfully")
-    
-    # Set chassis to velocity control mode
-    print("Setting chassis to velocity control mode...")
-    chassis_mode = ChassisControlModeParam(mode=ChassisControlMode.VELOCITY)
-    chassis_result = robot.chassis.set_control_mode(chassis_mode)
-    
-    if not chassis_result.is_success:
-        print(f"Warning: Chassis control mode setting failed - {chassis_result.error_message}")
-    else:
-        print("✓ Chassis velocity control mode set successfully")
-    
-    # Start chassis control thread (100Hz high frequency control)
-    print("Starting chassis control thread...")
-    chassis_controller = ChassisController(robot, control_rate=100.0)
-    chassis_controller.start()
-    print("✓ Chassis control thread started (100Hz)")
+
+    # Desktop has no chassis
+    chassis_controller = None
+    if robot_model != "desktop":
+        # Set chassis to velocity control mode
+        print("Setting chassis to velocity control mode...")
+        chassis_mode = ChassisControlModeParam(mode=ChassisControlMode.VELOCITY)
+        chassis_result = robot.chassis.set_control_mode(chassis_mode)
+
+        if not chassis_result.is_success:
+            print(f"Warning: Chassis control mode setting failed - {chassis_result.error_message}")
+        else:
+            print("✓ Chassis velocity control mode set successfully")
+
+        # Start chassis control thread (100Hz high frequency control)
+        print("Starting chassis control thread...")
+        chassis_controller = ChassisController(robot, control_rate=100.0)
+        chassis_controller.start()
+        print("✓ Chassis control thread started (100Hz)")
     
     frames = episode_data['frames']
     total_frames = len(frames)
@@ -441,15 +470,15 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
     for i, frame in enumerate(frames):
         try:
             # [Step 0] Update chassis target position (thread will continuously control)
-            target_odom = frame['observation'].get('odometry')
-            if target_odom:
-                chassis_controller.set_target_odom(target_odom)
-            
+            if chassis_controller is not None:
+                target_odom = frame['observation'].get('odometry')
+                if target_odom:
+                    chassis_controller.set_target_odom(target_odom)
+
             # [Step 1] Control waist/lift (adjust workspace, make end pose reachable)
             observation = frame.get('observation', {})
-            
+
             # Get lift/waist position
-            robot_model = robot.get_robot_model()
             if robot_model == "quanta_x1":
                 lift_joint_states = observation.get('lift_joint_states')
                 if lift_joint_states and 'positions' in lift_joint_states:
@@ -463,9 +492,9 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
             elif robot_model == "quanta_x2":
                 # In end pose mode, do not control waist end pose
                 pass
-            else:
-                print(f"Warning: Unsupported robot model: {robot_model}")
-            
+            elif robot_model == "desktop":
+                pass  # Desktop has no lift/waist
+
             # Get end pose
             left_end_pose = frame['observation'].get('left_arm_end_pose')
             right_end_pose = frame['observation'].get('right_arm_end_pose')
@@ -625,12 +654,12 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
             continue
     
     # Stop chassis control thread
-    chassis_controller.stop()
-    chassis_controller.join(timeout=1.0)
-    
+    if chassis_controller is not None:
+        chassis_controller.stop()
+        chassis_controller.join(timeout=1.0)
+
     elapsed = time.time() - start_time
-    print(f"\n\n✓ Replay completed! Time: {elapsed:.2f}s")
-    print(f"  Valid frames: {valid_frames}/{total_frames}")
+    print(f"\n\n✓ Replay completed! Time: {elapsed:.2f}s, Number of frames replayed: {i+1}")
 
 
 def main(
@@ -690,13 +719,24 @@ def main(
     print(f"  - Mode: {mode}")
     print(f"  - Speed: {speed}x")
     print(f"  - Number of frames: {episode_data['num_frames']}")
+
+    record_data_model = episode_data['model']
+
+    if (record_data_model != robot_model):
+        print(f"✗ Record data model {record_data_model} does not match robot model {robot_model}")
+        sys.exit(1)
     
-    if mode == "joint_pos":
+    if robot_model == "desktop":
+        if mode == "joint_pos":
+            print(f"  - Replay content: Dual arms + Grippers + Head")
+        elif mode == "end_pose":
+            print(f"  - Replay content: Dual arms end pose + Grippers + Head")
+    else:
         waist_lift = "Lift" if robot_model == "quanta_x1" else "Waist"
-        print(f"  - Replay content: Chassis + Dual arms + Grippers + {waist_lift} + Head")
-    elif mode == "end_pose":
-        waist_lift = "Lift" if robot_model == "quanta_x1" else "Waist"
-        print(f"  - Replay content: Chassis + Dual arms end pose + Grippers + {waist_lift} + Head")
+        if mode == "joint_pos":
+            print(f"  - Replay content: Chassis + Dual arms + Grippers + {waist_lift} + Head")
+        elif mode == "end_pose":
+            print(f"  - Replay content: Chassis + Dual arms end pose + Grippers + {waist_lift} + Head")
     
     input("\nPress Enter to start replay...")
     
