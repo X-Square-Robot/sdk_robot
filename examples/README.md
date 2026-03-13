@@ -35,6 +35,8 @@ python3 camera.py left-arm stream --server 192.168.10.1:50051
 
 ## chassis_control.py
 
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
+
 **Functions:**
 
 - `move_to_global_position()`: Move to global position
@@ -65,6 +67,31 @@ python3 chassis_control.py --server 192.168.10.1:50051 --control_mode map
 
 ```bash
 python check_connect.py --server 192.168.10.1:50051
+```
+
+---
+
+## robot_control.py
+
+**Functions:**
+
+- `emergency_stop()`: Emergency stop, call when emergency situation occurs (do not call frequently)
+- `recover_emergency_stop()`: Recover from emergency stop state
+- `homing()`: Execute robot homing operation
+
+The script first sets the robot work mode to SDK, then executes the specified action.
+
+**Usage:**
+
+```bash
+# Emergency stop
+python3 robot_control.py --action stop --server 192.168.10.1:50051
+
+# Recover from emergency stop
+python3 robot_control.py --action recover --server 192.168.10.1:50051
+
+# Homing (default action)
+python3 robot_control.py --action homing --server 192.168.10.1:50051
 ```
 
 ---
@@ -153,7 +180,7 @@ python3 data_replay_example.py ./collected_data/episode_0000/ --server 192.168.1
 
 ## depth_points.py
 
-Depth Point Cloud Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Functions:**
 
@@ -173,7 +200,7 @@ python3 depth_points.py --action stream --server 192.168.10.1:50051
 
 ## head_control.py
 
-Head Control Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Functions:**
 
@@ -193,7 +220,7 @@ python3 head_control.py --action move --server 192.168.10.1:50051
 
 ## imu.py
 
-IMU Sensor Data Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Functions:**
 
@@ -214,7 +241,7 @@ python3 imu.py --action stream --server 192.168.10.1:50051
 
 ## navigation.py
 
-Navigation Interface Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Usage:**
 
@@ -363,7 +390,7 @@ python3 quanta_x2/waist_control.py --server 192.168.10.1:50051 --mode joint_pos
 
 ## radar.py
 
-Radar Data Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Functions:**
 
@@ -396,7 +423,7 @@ python3 system.py --server 192.168.10.1:50051
 
 ## tof.py
 
-Infrared Sensor Data Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Functions:**
 
@@ -423,7 +450,7 @@ python3 tof.py --action both-stream --server 192.168.10.1:50051
 
 ## ultrasonic.py
 
-Ultrasonic Sensor Data Example
+For Quanta_X1 and Quanta_X2, Do not support DeskTop
 
 **Functions:**
 
@@ -444,6 +471,54 @@ python3 ultrasonic.py --action sensor-1-stream --server 192.168.10.1:50051
 
 # Stream read all sensors
 python3 ultrasonic.py --action all-stream --server 192.168.10.1:50051
+```
+
+---
+
+## desktop/arm_control.py
+
+Desktop Arm Control Example, do not use this example for other models
+
+**Functions:**
+
+- `move_arm_joints_toppra()`: Control operation
+- `move_by_joint_positions()`: Control operation
+- `move_arm_endpose_toppra()`: Control operation
+- `move_by_end_pose()`: Control operation
+- `stream_arm_joint_states()`: Data stream
+
+**Usage:**
+
+```bash
+# Control left arm by end pose mode
+python3 desktop/arm_control.py --server 192.168.10.1:50051 --mode end_pose --arm left
+# Control right arm by joint angles
+python3 desktop/arm_control.py --server 192.168.10.1:50051 --mode joint_pos --arm right
+
+# Get left arm joint state stream
+python3 desktop/arm_control.py --server 192.168.10.1:50051 --mode joint_pos --arm left --action stream
+# Get right arm end pose stream
+python3 desktop/arm_control.py --server 192.168.10.1:50051 --mode end_pose --arm right --action stream
+```
+
+---
+
+## desktop/gripper_control.py
+
+Desktop Gripper Control Example, do not use this example for other models
+
+**Functions:**
+
+- `move_gripper()`: Control gripper position
+- `stream_gripper_data()`: Get gripper joint state stream
+
+**Usage:**
+
+```bash
+# Get left gripper joint states
+python3 desktop/gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
+# Control left gripper
+python3 desktop/gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
 ```
 
 ---

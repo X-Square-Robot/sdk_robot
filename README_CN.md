@@ -129,7 +129,7 @@ pip install x2robot-1.0.0-py3-none-any.whl
 
 更新SDK版本时需要将之前版本SDK卸载，注意卸载也需要在SDK虚拟环境中执行
 
-```
+```bash
 # 卸载x2robot，假设你之前的版本是v0.1.8
 pip uninstall x2robot-0.1.8-py3-none-any.whl
 ```
@@ -174,13 +174,37 @@ python3 check_connect.py --server 192.168.10.1:50051
 # Response payload:[Pong to: Hello, X2Robot!]
 ```
 
+### 确认网络环境已关闭代理
+
+在一个终端执行相机图像获取示例脚本：<https://github.com/X-Square-Robot/sdk_robot/blob/main/examples/camera.py>
+
+```bash
+python3 camera.py head rgb-stream --server 192.168.10.1:50051
+```
+
+在另一个终端执行
+
+```bash
+sudo netstat -anp | grep 50051
+```
+
+确认只有名为python3的进程有创建50051端口的tcp连接
+![图片](docs/no_proxy.png)
+如果有其他进程也创建了50051端口的连接，例如下面这种情况：
+![图片](docs/has_proxy.png)
+需要先关闭这个进程，确保网络代理是关闭的，否则容易导致使用过程中连接中断。
+
 ### 运行示例
 
 详细示例请参考 [示例文档](examples/README_CN.md)。
 
 ## API 文档
 
-完整的 API 参考请查看 [API 文档](docs/API_Quanta_X1_CN.md)。
+完整的 API 参考请查看:
+
+- 量子1号Pro: [API 文档](docs/API_Quanta_X1_CN.md)。
+- 量子2号: [API 文档](docs/API_Quanta_X2_CN.md)。
+- 桌面六轴臂系列产品：[API 文档](docs/API_Desktop_CN.md)。
 
 ## 示例
 
@@ -188,19 +212,22 @@ python3 check_connect.py --server 192.168.10.1:50051
 
 ## 采集数据并转换成Lerobot格式的数据
 
+用户可自定义数据流程：
+
+- (1) 修改`examples\data_collection`目录下的数据采集代码 ，只采集所需字段；
+- (2) 编辑 `tools/convert_to_lerobot.py`（如 `ROBOT_DATA_CONFIG`、`state_source_mapping`、`action_source_mapping`）以定义需要转换的数据。
+
 请参考[数据采集示例](examples/data_collection_example.py)和[转换成lerobot数据的脚本](tools/convert_to_lerobot.py)
 
-convert_to_lerobot.py使用示例
+convert_to_lerobot.py使用请参考[lerobot数据格式转换脚本说明](tools/README_CN.md)
 
-```bash
-python3 tools/convert_to_lerobot.py \
-    --input-dir collected_data \
-    --output-dir ./lerobot_data \
-    --repo-id my_robot/dataset \
-    --robot-type quanta_x1 \
-    --use-videos
+## 样例
 
-```
+我们提供了一个简单的样例，用于演示 SDK 推理流程与交互方式。
+目前仅支持以下型号产品：
+
+- 量子1号Pro：[SDK 推理](samples/quanta_x1/README.md) 样例
+- 桌面六轴臂系列：（待补充）
 
 ## 常见问题
 
@@ -231,7 +258,7 @@ A:
 A：
 执行定位导航时，机器人不移动， 有时候会报错，如下图所示：
 ![图片](docs/Q3.jpeg)
-机器人为了保证定位导航的准确性，要求建图过程中移动距离必须达到 3.5 m 或旋转角度达到 210 度才会认为地图有效！建议执行开始建图后，在空旷场地下前后充分移动， 再结束建图， 参考示例代码chasisc_control.py。
+机器人为了保证定位导航的准确性，要求建图过程中移动距离必须达到 3.5 m 或旋转角度达到 210 度才会认为地图有效！建议执行开始建图后，在空旷场地下前后充分移动， 再结束建图， 参考示例代码 chassis_control.py。
 将control-mode切换成map，会执行先建图再用相对定位的方式导航到目标点
 
 ```bash
@@ -250,16 +277,12 @@ print(f"dynamic_info:{result.power_status.value}")
 
 ### Q5：运行报错 Connection reset by peer？
 
-A:
-
-有3种情况会导致断连：
-
-1. 无线连接控制时，数据传送量太大，网络延迟过高会导致连接报错，建议高频控制时用有线连接。
-2. 有线连接采数场景下，数据传输量大，采集的数据写入文件如果处理不及时会导致连接中断。建议用户PC尽量关掉其他不需要的进程，如果出现中断，请重试。
-3. 推理模式下，推理数据下发量也较大，会导致如下图所示报错。
-
+若使用 SDK 时出现如下图的连接异常
 ![图片](docs/Q5.jpeg)
-推理可以再次运行脚本 start_sdk_ex001.sh的脚本时，会延续上次中断的推理流程。
+
+A:
+请排查本机代理设置，确认代理是关闭的。排查网络代理请参照[确认网络环境已关闭代理](#确认网络环境已关闭代理)。
+部分企业终端安全软件（如 qzhddr 等）会将所有外网连接强制走代理。在高频、大流量的数据传输场景下，这类代理性能不足，容易导致连接超时或中断。在测试或使用 SDK 时暂时关闭代理，以排除网络环境对连接稳定性的影响。
 
 ### Q6：建图结束保存地图失败
 
@@ -268,8 +291,22 @@ A:
 ![Image](docs/Q6.png)
 
 A:
-
 和Q3一样的原因，机器人为了保证定位导航的准确性，要求建图过程中移动距离必须达到 3.5 m 或旋转角度达到 210 度才会认为地图有效！建议执行开始建图后，在空旷场地下前后充分移动， 再结束建图。
+
+### Q7: 执行convert_to_lerobot.py脚本报错“File exists： 'lerobot_data'”？
+
+![Image](docs/file_exists_error.png)
+
+A:
+指定的输出目录lerobot_data已经存在，请指定不同的输出目录或者删掉/重命名之前的目录
+
+### Q8：切换SDK工作模式时出现："Task operation failed"?
+
+控制或者数据回放时出现下面的错误
+
+![Image](docs/sdk_mode_failed.PNG)
+
+A: 当前处在其他工作模式，需要在主端控制界面切换到空闲模式
 
 ## 开发注意事项
 
