@@ -5,9 +5,11 @@ from x2robot import connect
 from x2robot.sdk import GripperPosition
 from time import sleep
 from x2robot.sdk import RobotModeParam, RobotWorkMode
+from x2robot.sdk import ManipulatorControlModeParam, ManipulatorControlMode
 
 def move_gripper(robot: Robot, gripper: str):
     robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
+    robot.robot_control.set_manipulator_control_mode(ManipulatorControlModeParam(mode=ManipulatorControlMode.MANIPULATOR_JOINT_POSITIONS))
 
     gripper_controller = robot.left_gripper if gripper == "left" else robot.right_gripper
 

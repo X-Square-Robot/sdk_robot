@@ -226,8 +226,8 @@ convert_to_lerobot.py使用请参考[lerobot数据格式转换脚本说明](tool
 我们提供了一个简单的样例，用于演示 SDK 推理流程与交互方式。
 目前仅支持以下型号产品：
 
-- 量子1号Pro：[SDK 推理](samples/quanta_x1/README.md) 样例
-- 桌面六轴臂系列：（待补充）
+- 量子1号Pro：[SDK 推理](samples/quanta_x1/README_CN.md) 样例
+- 桌面六轴臂系列：[SDK 推理](samples/desktop/README_CN.md) 样例
 
 ## 常见问题
 

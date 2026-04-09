@@ -225,7 +225,7 @@ We provide a simple sample to demonstrate the SDK inference workflow and interac
 For now, we only provide samples for the following models:
 
 - Quanta X1 Pro: [SDK inference](samples/quanta_x1/README.md) sample
-- Desktop:
+- Desktop: [SDK inference](samples/desktop/README.md) sample
 
 ## FAQ
 

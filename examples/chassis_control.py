@@ -3,6 +3,7 @@ from x2robot.sdk import CoordinateSystemMode, CoordinateSystemModeParam
 import typer
 from x2robot import Robot, connect
 from x2robot.sdk import ChassisControlMode, ChassisControlModeParam, ChassisPosition, ChassisVelocity
+from x2robot.sdk import RobotModeParam, RobotWorkMode
 import time
 from x2robot.sdk import SaveMapParam
 from x2robot.sdk import NavigationMode, NavigationModeParam
@@ -10,34 +11,58 @@ import sys
 import termios
 import tty
 import signal
+import threading
+from select import select
 
-def get_key():
-    """Get single key input on Linux/Ubuntu platforms
+# Default publish rate for velocity commands (Hz). Velocity mode requires at least 10Hz.
+VELOCITY_PUBLISH_RATE = 20.0
+KEY_TIMEOUT = 0.1  # Seconds to wait for key input before checking again
 
-    Note: In raw mode, Ctrl+C is read as a normal character (ASCII code 0x03)
-    Special handling is required to support normal interrupt functionality
+
+def get_key(settings=None, timeout=0):
+    """Get single key input on Linux/Ubuntu platforms.
+
+    When timeout > 0, returns '' if no key is pressed within timeout (non-blocking).
+    When timeout is 0 or None, blocks until a key is pressed.
+
+    Note: In raw mode, Ctrl+C is read as a normal character (ASCII code 0x03).
+    Special handling is required to support normal interrupt functionality.
     """
     fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
+    old_settings = settings if settings is not None else termios.tcgetattr(fd)
     try:
         tty.setraw(sys.stdin.fileno())
-        ch = sys.stdin.read(1)
+        if timeout and timeout > 0:
+            rlist, _, _ = select([sys.stdin], [], [], timeout)
+            ch = sys.stdin.read(1) if rlist else ''
+        else:
+            ch = sys.stdin.read(1)
         # Ctrl+C in raw mode is character '\x03'
         if ch == '\x03':  # Ctrl+C
-            # Restore terminal settings
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            # Raise KeyboardInterrupt exception
             raise KeyboardInterrupt("User pressed Ctrl+C")
-        elif ch:
+        if ch:
             return ch.lower()
-        else:
-            return None
+        return ''
     finally:
-        # Ensure terminal settings are restored (unless already restored due to Ctrl+C)
         try:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        except:
-            pass  # If already restored, ignore the error
+        except Exception:
+            pass
+
+
+def save_terminal_settings():
+    """Save current terminal settings for later restore."""
+    if sys.platform == 'win32':
+        return None
+    return termios.tcgetattr(sys.stdin)
+
+
+def restore_terminal_settings(settings):
+    """Restore terminal settings."""
+    if sys.platform == 'win32' or settings is None:
+        return
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
 
 def move_to_global_position(robot: Robot):
     # need to set control mode to global first
@@ -138,150 +163,140 @@ def stop_chassis(robot: Robot):
         robot.chassis.set_velocity(cur_velocity)
         time.sleep(0.01)
 
-def move_by_keyboard(robot: Robot):
-    """Control chassis velocity in real-time via keyboard
 
-    Velocity mode requires continuous command sending (at least 10Hz),
-    so continuous sending is used here.
-    When arrow keys are pressed, velocity commands are continuously sent,
-    and when released or other keys are pressed, movement stops.
+class VelocitySendThread(threading.Thread):
+    """Background thread that continuously sends velocity commands at a fixed rate.
+
+    Similar to teleop_twist_keyboard's PublishThread: key presses only update
+    the target velocity state; this thread keeps sending commands for smooth control.
     """
-    # 设置速度控制模式
+
+    def __init__(self, robot: Robot, rate: float):
+        super().__init__(daemon=True)
+        self.robot = robot
+        self.vel_x = 0.0
+        self.vel_y = 0.0
+        self.vel_yaw = 0.0
+        self.speed = 0.0
+        self.turn = 0.0
+        self.condition = threading.Condition()
+        self.done = False
+        self.timeout = 1.0 / rate if rate > 0 else 0.1
+        self.start()
+
+    def update(self, vel_x: float, vel_y: float, vel_yaw: float, speed: float, turn: float):
+        with self.condition:
+            self.vel_x = vel_x
+            self.vel_y = vel_y
+            self.vel_yaw = vel_yaw
+            self.speed = speed
+            self.turn = turn
+            self.condition.notify()
+
+    def stop(self):
+        self.done = True
+        self.update(0, 0, 0, 0, 0)
+        self.join()
+
+    def run(self):
+        while not self.done:
+            with self.condition:
+                self.condition.wait(self.timeout)
+                vx = self.vel_x * self.speed
+                vy = self.vel_y * self.speed
+                vyaw = self.vel_yaw * self.turn
+            try:
+                self.robot.chassis.set_velocity(
+                    ChassisVelocity(vel_x=vx, vel_y=vy, vel_yaw=vyaw)
+                )
+            except Exception:
+                pass
+        # Send stop when exiting
+        try:
+            self.robot.chassis.set_velocity(
+                ChassisVelocity(vel_x=0, vel_y=0, vel_yaw=0)
+            )
+        except Exception:
+            pass
+
+
+def move_by_keyboard(robot: Robot):
+    """Control chassis velocity in real-time via keyboard.
+
+    Uses a background thread to continuously send velocity commands (like
+    teleop_twist_keyboard), so holding a key produces smooth continuous
+    movement. Key release (timeout) or space stops the robot.
+    """
     robot.chassis.set_control_mode(ChassisControlModeParam(mode=ChassisControlMode.VELOCITY))
-    
-    # First ensure the robot is stopped
     print("Stopping chassis...")
     stop_chassis(robot)
-    
-    vel_x = 0.25
-    vel_yaw = 0.3
-    
+
+    # Direction state: x in [-1,0,1], y in [-1,0,1], th (yaw) in [-1,0,1]
+    x, y, th = 0.0, 0.0, 0.0
+    speed = 0.35
+    turn = 0.40
+    speed_limit, turn_limit = 1.0, 2.0
+
+    move_bindings = {
+        'w': (1, 0, 0),
+        's': (-1, 0, 0),
+        'a': (0, 0, 1),
+        'd': (0, 0, -1),
+    }
+    speed_step = 0.02
+    turn_step = 0.02
+
     print("=" * 60)
     print("Keyboard Control Chassis Velocity")
     print("=" * 60)
-    print("Direction Control:")
-    print("  w - Forward")
-    print("  s - Backward")
-    print("  a - Turn left (counter-clockwise)")
-    print("  d - Turn right (clockwise)")
-    print("Speed Adjustment:")
-    print("  i - Increase forward speed")
-    print("  k - Decrease forward speed")
-    print("  j - Increase rotation speed")
-    print("  l - Decrease rotation speed")
-    print("  space - Stop")
-    print("  q - Quit")
+    print("Direction Control (hold key for continuous movement):")
+    print("  w - Forward    s - Backward")
+    print("  a - Turn left  d - Turn right")
+    print("Speed Adjustment: i/k (linear), j/l (angular)")
+    print("  space - Stop   q - Quit")
     print("=" * 60)
-    print(f"Current speed: vel_x={vel_x:.2f} m/s, vel_yaw={vel_yaw:.2f} rad/s")
+    print(f"Current: speed={speed:.2f} m/s, turn={turn:.2f} rad/s")
     print("Waiting for key input...")
-    
-    current_vel_x = 0.0
-    current_vel_y = 0.0
-    current_vel_yaw = 0.0
-    
+
+    settings = save_terminal_settings()
+    send_thread = VelocitySendThread(robot, VELOCITY_PUBLISH_RATE)
+    send_thread.update(x, y, th, speed, turn)
+
     try:
         while True:
-            key = get_key()
-            if key is None:
-                continue 
-            
-            if key == 'w':
-                # Forward: continuously send velocity commands
-                print(f"Forward: vel_x={vel_x:.2f}")
-                current_vel_x = vel_x
-                current_vel_y = 0.0
-                current_vel_yaw = 0.0
-                # Continuously send commands until another key is pressed
-                for _ in range(30):  # Send commands for 1 second
-                    cur_velocity = ChassisVelocity(vel_x=current_vel_x, vel_y=current_vel_y, vel_yaw=current_vel_yaw)
-                    robot.chassis.set_velocity(cur_velocity)
-                    time.sleep(0.01)
-                # Stop
-                stop_chassis(robot)
-                current_vel_x = 0.0
-                
-            elif key == 's':
-                # Backward
-                print(f"Backward: vel_x={-vel_x:.2f}")
-                current_vel_x = -vel_x
-                current_vel_y = 0.0
-                current_vel_yaw = 0.0
-                for _ in range(30):
-                    cur_velocity = ChassisVelocity(vel_x=current_vel_x, vel_y=current_vel_y, vel_yaw=current_vel_yaw)
-                    robot.chassis.set_velocity(cur_velocity)
-                    time.sleep(0.01)
-                stop_chassis(robot)
-                current_vel_x = 0.0
-                
-            elif key == 'a':
-                # Turn left (counter-clockwise, positive angular velocity)
-                print(f"Turn left: vel_yaw={vel_yaw:.2f}")
-                current_vel_x = 0.0
-                current_vel_y = 0.0
-                current_vel_yaw = vel_yaw
-                for _ in range(30):
-                    cur_velocity = ChassisVelocity(vel_x=current_vel_x, vel_y=current_vel_y, vel_yaw=current_vel_yaw)
-                    robot.chassis.set_velocity(cur_velocity)
-                    time.sleep(0.01)
-                stop_chassis(robot)
-                current_vel_yaw = 0.0
-                
-            elif key == 'd':
-                # Turn right (clockwise, negative angular velocity)
-                print(f"Turn right: vel_yaw={-vel_yaw:.2f}")
-                current_vel_x = 0.0
-                current_vel_y = 0.0
-                current_vel_yaw = -vel_yaw
-                for _ in range(30):
-                    cur_velocity = ChassisVelocity(vel_x=current_vel_x, vel_y=current_vel_y, vel_yaw=current_vel_yaw)
-                    robot.chassis.set_velocity(cur_velocity)
-                    time.sleep(0.01)
-                stop_chassis(robot)
-                current_vel_yaw = 0.0
-                
+            key = get_key(settings, KEY_TIMEOUT)
+            if key in move_bindings:
+                x, y, th = move_bindings[key]
             elif key == 'i':
-                vel_x += 0.05
-                vel_x = max(0.0, min(vel_x, 1.0))  # Limit between 0-1
-                print(f"Forward speed increased to: {vel_x:.2f} m/s")
-
+                speed = round(min(speed_limit, speed + speed_step), 2)
+                print(f"speed={speed:.2f} m/s, turn={turn:.2f} rad/s")
             elif key == 'k':
-                vel_x -= 0.05
-                vel_x = max(0.0, min(vel_x, 1.0))
-                print(f"Forward speed decreased to: {vel_x:.2f} m/s")
-
+                speed = round(max(0.0, speed - speed_step), 2)
+                print(f"speed={speed:.2f} m/s, turn={turn:.2f} rad/s")
             elif key == 'j':
-                vel_yaw += 0.05
-                vel_yaw = max(0.0, min(vel_yaw, 2.0))  # Limit between 0-2
-                print(f"Rotation speed increased to: {vel_yaw:.2f} rad/s")
-
+                turn = round(min(turn_limit, turn + turn_step), 2)
+                print(f"speed={speed:.2f} m/s, turn={turn:.2f} rad/s")
             elif key == 'l':
-                vel_yaw -= 0.05
-                vel_yaw = max(0.0, min(vel_yaw, 2.0))
-                print(f"Rotation speed decreased to: {vel_yaw:.2f} rad/s")
-
-            elif key == ' ' or key == '\x20':  # Space key
-                print("Stop")
-                stop_chassis(robot)
-                current_vel_x = 0.0
-                current_vel_y = 0.0
-                current_vel_yaw = 0.0
-
+                turn = round(max(0.0, turn - turn_step), 2)
+                print(f"speed={speed:.2f} m/s, turn={turn:.2f} rad/s")
+            elif key == ' ' or key == '\x20':
+                x, y, th = 0.0, 0.0, 0.0
             elif key == 'q':
-                print("Quit")
-                stop_chassis(robot)
                 break
             else:
-                # ignore other invalid keys
-                pass
-                
+                # Timeout (key released) or unknown key: stop
+                x, y, th = 0.0, 0.0, 0.0
+
+            send_thread.update(x, y, th, speed, turn)
     except KeyboardInterrupt:
         print("\nReceived interrupt signal, stopping chassis...")
-        stop_chassis(robot)
     except Exception as e:
         print(f"Error occurred: {e}")
         import traceback
         traceback.print_exc()
-        stop_chassis(robot)
+    finally:
+        send_thread.stop()
+        restore_terminal_settings(settings)
 
 
 def main(
@@ -289,6 +304,8 @@ def main(
     control_mode: Annotated[str, typer.Option(help="control mode: map, keyboard")] = "keyboard",
 ):
     robot = connect(f"x2://{server}")
+
+    robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
 
     # Note: In keyboard control mode, Ctrl+C is handled in get_key()
     # Set signal handler as backup (though it may not trigger in raw mode)

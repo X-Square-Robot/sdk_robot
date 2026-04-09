@@ -2,7 +2,7 @@ import signal
 from typing import Annotated
 import typer
 from x2robot import Robot, connect
-from x2robot.sdk import LiftPosition, RobotModeParam, RobotWorkMode
+from x2robot.sdk import LiftPosition, RobotModeParam, RobotWorkMode, ManipulatorControlModeParam, ManipulatorControlMode
 import time
 
 # only for quanta_x1
@@ -43,6 +43,7 @@ def main(
 
     if action == "move":
         robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
+        robot.robot_control.set_manipulator_control_mode(ManipulatorControlModeParam(mode=ManipulatorControlMode.MANIPULATOR_JOINT_POSITIONS))
         # quanta_x1, move by lift position
         move_by_lift_position(robot, direction, distance)
     elif action == "stream":
