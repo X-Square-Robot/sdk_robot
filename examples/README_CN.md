@@ -239,18 +239,6 @@ python3 imu.py --action stream --server 192.168.10.1:50051
 
 ---
 
-## navigation.py
-
-适用于 量子1号 和 量子2号，不支持 桌面主从 机型
-
-**使用方法:**
-
-```bash
-python3 navigation.py --server 192.168.10.1:50051
-```
-
----
-
 ## quanta_x1/arm_control.py
 
 Quanta X1 机械臂控制示例，其他机型请勿使用该示例

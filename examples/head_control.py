@@ -4,8 +4,7 @@ import typer
 from x2robot import Robot
 from x2robot import connect
 from x2robot.sdk import HeadPose
-from x2robot.status_code import MotorErrorCode
-from x2robot.status_code import MotorStateCode
+from x2robot.sdk import RobotModeParam, RobotWorkMode
 
 def move_head(robot: Robot):
     # currently speed is fixed 0.1 rad/s
@@ -40,6 +39,8 @@ def main(
     action: Annotated[str, typer.Option(help="action: move, stream")] = "move",
 ):
     robot = connect(f"x2://{server}")
+
+    robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
 
     if action == "move":
         move_head(robot)

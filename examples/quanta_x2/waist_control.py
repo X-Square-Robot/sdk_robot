@@ -90,6 +90,11 @@ def stream_waist_data(robot: Robot, mode: str):
                 print(f"joint_state: {joint_state}")
                 time.sleep(0.1)
         elif mode == "end_pose":
+            # 1. Initialization and configuration
+            robot.system.set_work_mode(RobotModeParam(mode=RobotWorkMode.SDK))
+            # Set to end pose control mode
+            robot.robot_control.set_manipulator_control_mode(ManipulatorControlModeParam(mode=ManipulatorControlMode.MANIPULATOR_END_POSE))
+            time.sleep(3)
             for end_pose in robot.waist.get_end_pose_stream():
                 print(f"end_pose: {end_pose}")
                 time.sleep(0.1)

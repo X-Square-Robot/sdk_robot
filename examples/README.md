@@ -239,18 +239,6 @@ python3 imu.py --action stream --server 192.168.10.1:50051
 
 ---
 
-## navigation.py
-
-For Quanta_X1 and Quanta_X2, Do not support DeskTop
-
-**Usage:**
-
-```bash
-python3 navigation.py --server 192.168.10.1:50051
-```
-
----
-
 ## quanta_x1/arm_control.py
 
 Quanta X1 Arm Control Example, do not use this example for other models

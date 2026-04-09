@@ -463,7 +463,17 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
     
     print(f"\nStarting replay of {total_frames} frames...")
     print("Press Ctrl+C to stop replay\n")
-    
+
+    # Check if pose is valid (non-zero)
+    def is_valid_pose(pose_data):
+        if not pose_data:
+            return False
+        pos = pose_data['position']
+        ori = pose_data['orientation']
+        # Check if all are zero (invalid data)
+        return not (pos['x'] == 0 and pos['y'] == 0 and pos['z'] == 0 and
+                   ori['x'] == 0 and ori['y'] == 0 and ori['z'] == 0 and ori['w'] == 1)
+        
     start_time = time.time()
     valid_frames = 0
     
@@ -476,7 +486,7 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                     chassis_controller.set_target_odom(target_odom)
 
             # [Step 1] Control waist/lift (adjust workspace, make end pose reachable)
-            observation = frame.get('observation', {})
+            observation = frame.get('observation', {})    
 
             # Get lift/waist position
             if robot_model == "quanta_x1":
@@ -490,24 +500,34 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                             if i == 0:
                                 print(f"Warning: Lift control failed - {e}")
             elif robot_model == "quanta_x2":
-                # In end pose mode, do not control waist end pose
-                pass
+                waist_end_pose = observation.get('waist_end_pose')
+                if waist_end_pose and is_valid_pose(waist_end_pose):
+                    waist_position = geometry_msgs.Point(
+                        x=waist_end_pose['position']['x'],
+                        y=waist_end_pose['position']['y'],
+                        z=waist_end_pose['position']['z']
+                    )
+                    waist_orientation = geometry_msgs.Quaternion(
+                        x=waist_end_pose['orientation']['x'],
+                        y=waist_end_pose['orientation']['y'],
+                        z=waist_end_pose['orientation']['z'],
+                        w=waist_end_pose['orientation']['w']
+                    )
+                    waist_pose_msg = geometry_msgs.Pose(
+                        position=waist_position,
+                        orientation=waist_orientation
+                    )
+                    waist_result = robot.waist.set_end_pose(waist_pose_msg)
+                    if not waist_result.is_success:
+                        if i == 0:
+                            print(f"Warning: Waist end pose control failed - {waist_result.error_message}")
             elif robot_model == "desktop":
                 pass  # Desktop has no lift/waist
 
             # Get end pose
             left_end_pose = frame['observation'].get('left_arm_end_pose')
             right_end_pose = frame['observation'].get('right_arm_end_pose')
-            
-            # Check if pose is valid (non-zero)
-            def is_valid_pose(pose_data):
-                if not pose_data:
-                    return False
-                pos = pose_data['position']
-                ori = pose_data['orientation']
-                # Check if all are zero (invalid data)
-                return not (pos['x'] == 0 and pos['y'] == 0 and pos['z'] == 0 and
-                           ori['x'] == 0 and ori['y'] == 0 and ori['z'] == 0 and ori['w'] == 1)
+
             
             # [Step 2] Send left arm end pose
             if left_end_pose and is_valid_pose(left_end_pose):
