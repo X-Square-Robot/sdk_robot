@@ -56,22 +56,28 @@
 * [WrenchStamped](#message-geometry_msgswrenchstamped)
 * [CompressedImage](#message-sensor_msgscompressedimage)
 * [JointState](#message-sensor_msgsjointstate)
+* [AudioData](#message-xrsdkaudiodata)
+* [AudioDataStamped](#message-xrsdkaudiodatastamped)
+* [AudioInfo](#message-xrsdkaudioinfo)
 * [ExecutionResult](#message-xrsdkexecutionresult)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [JointPositions](#message-xrsdkjointpositions)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
 * [PingRequest](#message-xrsdkpingrequest)
+* [PlayAudioResponse](#message-xrsdkplayaudioresponse)
 * [PongResponse](#message-xrsdkpongresponse)
 * [PowerStatus](#message-xrsdkpowerstatus)
 * [RobotDynamicInfo](#message-xrsdkrobotdynamicinfo)
 * [RobotModeParam](#message-xrsdkrobotmodeparam)
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
+* [StopAudioResponse](#message-xrsdkstopaudioresponse)
 
 ### 枚举类型列表
 
 * [RobotModelType](#enum-xrsdkrobotmodeltype)
 * [RobotWorkMode](#enum-xrsdkrobotworkmode)
+* [VoicePromptPriority](#enum-xrsdkvoicepromptpriority)
 
 ---
 
@@ -745,7 +751,7 @@ def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 ```
 
-设置机器人工作模式：IDLE, INFERE, COLLECT, SDK, 目前仅支持SDK模式。
+Set Robot work mode: IDLE, INFERE, COLLECT, SDK
 
 **参数:**
 
@@ -937,6 +943,45 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 ---
 
+<a id="message-xrsdkaudiodata"></a>
+#### AudioData
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `data` | `bytes` |  |
+
+---
+
+<a id="message-xrsdkaudiodatastamped"></a>
+#### AudioDataStamped
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `audio_info` | [`AudioInfo`](#message-xrsdkaudioinfo) |  |
+| `audio_data` | [`AudioData`](#message-xrsdkaudiodata) |  |
+
+---
+
+<a id="message-xrsdkaudioinfo"></a>
+#### AudioInfo
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `channels` | `uint32` |  |
+| `sample_rate` | `uint32` |  |
+| `sample_format` | `string` |  |
+| `bitrate` | `uint32` |  |
+| `coding_format` | `string` |  |
+| `bit_depth` | `uint32` |  |
+
+---
+
 <a id="message-xrsdkexecutionresult"></a>
 #### ExecutionResult
 
@@ -991,6 +1036,20 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 | 字段 | 类型 | 说明 |
 |------|------|--------|
 | `payload` | `string` |  |
+
+---
+
+<a id="message-xrsdkplayaudioresponse"></a>
+#### PlayAudioResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
+| `play_id` | `uint64` | equals ROS request_id; reserved 0 for "stop all" |
+| `resource_id` | `string` | empty when cache=false |
 
 ---
 
@@ -1072,6 +1131,18 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 ---
 
+<a id="message-xrsdkstopaudioresponse"></a>
+#### StopAudioResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
+
+---
+
 ### 枚举类型
 
 <a id="enum-xrsdkrobotmodeltype"></a>
@@ -1092,9 +1163,20 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 | 值 | 说明 |
 |------|--------|
-| `IDLE` (0) | 机器人处于空闲状态，目前不支持此模式。 |
-| `INFERE` (1) | 机器人处于推理模式，目前不支持此模式。 |
-| `COLLECT` (2) | 机器人处于采集模式，目前不支持此模式。 |
-| `SDK` (3) | 机器人处于SDK模式，目前仅支持此模式。 |
+| `IDLE` (0) | 机器人处于空闲状态 |
+| `INFERE` (1) | 机器人处于推理模式 |
+| `COLLECT` (2) | 机器人处于采集模式 |
+| `SDK` (3) | 机器人处于SDK模式 |
+
+---
+
+<a id="enum-xrsdkvoicepromptpriority"></a>
+#### VoicePromptPriority
+
+| 值 | 说明 |
+|------|--------|
+| `PRIORITY_URGENT` (0) |  |
+| `PRIORITY_HIGH` (1) |  |
+| `PRIORITY_NORMAL` (2) |  |
 
 ---

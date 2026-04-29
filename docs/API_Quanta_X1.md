@@ -4,6 +4,11 @@
 
 ### Services
 
+* [Audio](#audio)
+   * [play_audio](#audio-play_audio)
+   * [replay](#audio-replay)
+   * [stop_audio](#audio-stop_audio)
+   * [get_audio_stream](#audio-get_audio_stream)
 * [ChassisController](#chassiscontroller)
    * [set_control_mode](#chassiscontroller-set_control_mode)
    * [get_control_mode](#chassiscontroller-get_control_mode)
@@ -150,6 +155,9 @@
 * [MultiArrayDimension](#message-std_msgsmultiarraydimension)
 * [MultiArrayLayout](#message-std_msgsmultiarraylayout)
 * [String](#message-std_msgsstring)
+* [AudioData](#message-xrsdkaudiodata)
+* [AudioDataStamped](#message-xrsdkaudiodatastamped)
+* [AudioInfo](#message-xrsdkaudioinfo)
 * [ChassisControlModeParam](#message-xrsdkchassiscontrolmodeparam)
 * [ChassisPosition](#message-xrsdkchassisposition)
 * [ChassisPositionList](#message-xrsdkchassispositionlist)
@@ -163,6 +171,7 @@
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
 * [NavigationModeParam](#message-xrsdknavigationmodeparam)
 * [PingRequest](#message-xrsdkpingrequest)
+* [PlayAudioResponse](#message-xrsdkplayaudioresponse)
 * [PongResponse](#message-xrsdkpongresponse)
 * [PowerStatus](#message-xrsdkpowerstatus)
 * [RobotDynamicInfo](#message-xrsdkrobotdynamicinfo)
@@ -170,6 +179,7 @@
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
 * [SaveMapParam](#message-xrsdksavemapparam)
+* [StopAudioResponse](#message-xrsdkstopaudioresponse)
 * [TactileSensorData](#message-xrsdktactilesensordata)
 
 ### Enum Types
@@ -181,10 +191,99 @@
 * [NavigationMode](#enum-xrsdknavigationmode)
 * [RobotModelType](#enum-xrsdkrobotmodeltype)
 * [RobotWorkMode](#enum-xrsdkrobotworkmode)
+* [VoicePromptPriority](#enum-xrsdkvoicepromptpriority)
 
 ---
 
 ## API Services
+
+<h3 id="audio">Audio</h3>
+
+Audio service
+
+<h4 id="audio-play_audio">play_audio</h4>
+
+```python
+def play_audio(source: str, volume: int = 80, block: bool = False, priority: int = 2, cache: bool = True, resource_id: Optional[str] = None) -> AudioResult
+```
+
+Upload audio from a local file or URL and play it.
+
+Audio format is auto-detected from content (supports wav, mp3).
+
+Max single upload is 60 MB; client rejects locally if the size is exceeded.
+
+**Parameters:**
+
+* `source` (str) - Local file path or http(s):// URL.
+* `volume` (int) - 1-100.
+* `block` (bool) - Wait until playback finishes.
+* `priority` (int) - 0=urgent, 1=high, 2=normal.
+* `cache` (bool) - Whether the server should cache the resource for replay.
+* `resource_id` (Optional[str]) - Optional cache-key hint (overrides server-computed sha).
+
+**Returns:**
+
+* [`AudioResult`](#message-xrsdkaudioresult)
+
+---
+
+<h4 id="audio-replay">replay</h4>
+
+```python
+def replay(resource_id: str, volume: int = 80, block: bool = False, priority: int = 2) -> AudioResult
+```
+
+Replay a previously cached resource by id.
+
+**Parameters:**
+
+* `resource_id` (str) - Cache key returned from a previous play_audio call.
+* `volume` (int) - 1-100.
+* `block` (bool) - Wait until playback finishes.
+* `priority` (int) - 0=urgent, 1=high, 2=normal.
+
+**Returns:**
+
+* [`AudioResult`](#message-xrsdkaudioresult)
+
+---
+
+<h4 id="audio-stop_audio">stop_audio</h4>
+
+```python
+def stop_audio(play_id: int = 0) -> StopAudioResult
+```
+
+Stop a specific playback task or all tasks.
+
+**Parameters:**
+
+* `play_id` (int) - The play_id to stop. 0 means stop all queued/playing tasks.
+
+**Returns:**
+
+* [`StopAudioResult`](#message-xrsdkstopaudioresult)
+
+---
+
+<h4 id="audio-get_audio_stream">get_audio_stream</h4>
+
+```python
+def get_audio_stream() -> Iterator[AudioDataStamped]
+```
+
+Stream microphone audio frames. Sample rate is determined by the server.
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* `Iterator[`[`AudioDataStamped`](#message-xrsdkaudiodatastamped)`]`
+
+---
 
 <h3 id="chassiscontroller">ChassisController</h3>
 
@@ -1931,7 +2030,7 @@ Recover from emergency stop, only when emergency stop is called
 def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 ```
 
-Set Robot work mode: IDLE, INFERE, COLLECT, SDK, only support SDK mode for now.
+Set Robot work mode: IDLE, INFERE, COLLECT, SDK
 
 **Parameters:**
 
@@ -2565,6 +2664,45 @@ Get Robot runtime info
 
 ---
 
+<a id="message-xrsdkaudiodata"></a>
+#### AudioData
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `data` | `bytes` |  |
+
+---
+
+<a id="message-xrsdkaudiodatastamped"></a>
+#### AudioDataStamped
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `audio_info` | [`AudioInfo`](#message-xrsdkaudioinfo) |  |
+| `audio_data` | [`AudioData`](#message-xrsdkaudiodata) |  |
+
+---
+
+<a id="message-xrsdkaudioinfo"></a>
+#### AudioInfo
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `channels` | `uint32` |  |
+| `sample_rate` | `uint32` |  |
+| `sample_format` | `string` |  |
+| `bitrate` | `uint32` |  |
+| `coding_format` | `string` |  |
+| `bit_depth` | `uint32` |  |
+
+---
+
 <a id="message-xrsdkchassiscontrolmodeparam"></a>
 #### ChassisControlModeParam
 
@@ -2716,6 +2854,20 @@ Get Robot runtime info
 
 ---
 
+<a id="message-xrsdkplayaudioresponse"></a>
+#### PlayAudioResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
+| `play_id` | `uint64` | equals ROS request_id; reserved 0 for "stop all" |
+| `resource_id` | `string` | empty when cache=false |
+
+---
+
 <a id="message-xrsdkpongresponse"></a>
 #### PongResponse
 
@@ -2802,6 +2954,18 @@ Get Robot runtime info
 | Field | Type | Description |
 |-------|------|-------------|
 | `map_name` | `string` |  |
+
+---
+
+<a id="message-xrsdkstopaudioresponse"></a>
+#### StopAudioResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
 
 ---
 
@@ -2903,9 +3067,20 @@ map coordinate system is used for map based navigation. need to set this mode be
 
 | Value | Description |
 |-------|-------------|
-| `IDLE` (0) | Robot is idle, not support this mode for now. |
-| `INFERE` (1) | Robot is in inference mode, not support this mode for now. |
-| `COLLECT` (2) | Robot is in collect mode, not support this mode for now. |
-| `SDK` (3) | Robot is in SDK mode, only support this mode for now. |
+| `IDLE` (0) | Robot is idle |
+| `INFERE` (1) | Robot is in inference mode |
+| `COLLECT` (2) | Robot is in collect mode |
+| `SDK` (3) | Robot is in SDK mode |
+
+---
+
+<a id="enum-xrsdkvoicepromptpriority"></a>
+#### VoicePromptPriority
+
+| Value | Description |
+|-------|-------------|
+| `PRIORITY_URGENT` (0) |  |
+| `PRIORITY_HIGH` (1) |  |
+| `PRIORITY_NORMAL` (2) |  |
 
 ---
