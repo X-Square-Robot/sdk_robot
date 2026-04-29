@@ -56,22 +56,28 @@
 * [WrenchStamped](#message-geometry_msgswrenchstamped)
 * [CompressedImage](#message-sensor_msgscompressedimage)
 * [JointState](#message-sensor_msgsjointstate)
+* [AudioData](#message-xrsdkaudiodata)
+* [AudioDataStamped](#message-xrsdkaudiodatastamped)
+* [AudioInfo](#message-xrsdkaudioinfo)
 * [ExecutionResult](#message-xrsdkexecutionresult)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [JointPositions](#message-xrsdkjointpositions)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
 * [PingRequest](#message-xrsdkpingrequest)
+* [PlayAudioResponse](#message-xrsdkplayaudioresponse)
 * [PongResponse](#message-xrsdkpongresponse)
 * [PowerStatus](#message-xrsdkpowerstatus)
 * [RobotDynamicInfo](#message-xrsdkrobotdynamicinfo)
 * [RobotModeParam](#message-xrsdkrobotmodeparam)
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
+* [StopAudioResponse](#message-xrsdkstopaudioresponse)
 
 ### Enum Types
 
 * [RobotModelType](#enum-xrsdkrobotmodeltype)
 * [RobotWorkMode](#enum-xrsdkrobotworkmode)
+* [VoicePromptPriority](#enum-xrsdkvoicepromptpriority)
 
 ---
 
@@ -745,7 +751,7 @@ Get Joint state stream
 def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 ```
 
-Set Robot work mode: IDLE, INFERE, COLLECT, SDK, only support SDK mode for now.
+Set Robot work mode: IDLE, INFERE, COLLECT, SDK
 
 **Parameters:**
 
@@ -937,6 +943,45 @@ Get Robot runtime info
 
 ---
 
+<a id="message-xrsdkaudiodata"></a>
+#### AudioData
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `data` | `bytes` |  |
+
+---
+
+<a id="message-xrsdkaudiodatastamped"></a>
+#### AudioDataStamped
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `audio_info` | [`AudioInfo`](#message-xrsdkaudioinfo) |  |
+| `audio_data` | [`AudioData`](#message-xrsdkaudiodata) |  |
+
+---
+
+<a id="message-xrsdkaudioinfo"></a>
+#### AudioInfo
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `channels` | `uint32` |  |
+| `sample_rate` | `uint32` |  |
+| `sample_format` | `string` |  |
+| `bitrate` | `uint32` |  |
+| `coding_format` | `string` |  |
+| `bit_depth` | `uint32` |  |
+
+---
+
 <a id="message-xrsdkexecutionresult"></a>
 #### ExecutionResult
 
@@ -991,6 +1036,20 @@ Get Robot runtime info
 | Field | Type | Description |
 |-------|------|-------------|
 | `payload` | `string` |  |
+
+---
+
+<a id="message-xrsdkplayaudioresponse"></a>
+#### PlayAudioResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
+| `play_id` | `uint64` | equals ROS request_id; reserved 0 for "stop all" |
+| `resource_id` | `string` | empty when cache=false |
 
 ---
 
@@ -1072,6 +1131,18 @@ Get Robot runtime info
 
 ---
 
+<a id="message-xrsdkstopaudioresponse"></a>
+#### StopAudioResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
+
+---
+
 ### Enums
 
 <a id="enum-xrsdkrobotmodeltype"></a>
@@ -1092,9 +1163,20 @@ Get Robot runtime info
 
 | Value | Description |
 |-------|-------------|
-| `IDLE` (0) | Robot is idle, not support this mode for now. |
-| `INFERE` (1) | Robot is in inference mode, not support this mode for now. |
-| `COLLECT` (2) | Robot is in collect mode, not support this mode for now. |
-| `SDK` (3) | Robot is in SDK mode, only support this mode for now. |
+| `IDLE` (0) | Robot is idle |
+| `INFERE` (1) | Robot is in inference mode |
+| `COLLECT` (2) | Robot is in collect mode |
+| `SDK` (3) | Robot is in SDK mode |
+
+---
+
+<a id="enum-xrsdkvoicepromptpriority"></a>
+#### VoicePromptPriority
+
+| Value | Description |
+|-------|-------------|
+| `PRIORITY_URGENT` (0) |  |
+| `PRIORITY_HIGH` (1) |  |
+| `PRIORITY_NORMAL` (2) |  |
 
 ---

@@ -4,6 +4,11 @@
 
 ### 服务
 
+* [Audio](#audio)
+   * [play_audio](#audio-play_audio)
+   * [replay](#audio-replay)
+   * [stop_audio](#audio-stop_audio)
+   * [get_audio_stream](#audio-get_audio_stream)
 * [ChassisController](#chassiscontroller)
    * [set_control_mode](#chassiscontroller-set_control_mode)
    * [get_control_mode](#chassiscontroller-get_control_mode)
@@ -111,6 +116,7 @@
    * [get_chassis_ultrasonic4_stream](#ultrasonic-get_chassis_ultrasonic4_stream)
 * [WaistController](#waistcontroller)
    * [set_joint_positions](#waistcontroller-set_joint_positions)
+   * [set_end_pose](#waistcontroller-set_end_pose)
    * [get_joint_states](#waistcontroller-get_joint_states)
    * [get_joint_states_stream](#waistcontroller-get_joint_states_stream)
    * [get_end_pose](#waistcontroller-get_end_pose)
@@ -142,6 +148,9 @@
 * [MultiArrayDimension](#message-std_msgsmultiarraydimension)
 * [MultiArrayLayout](#message-std_msgsmultiarraylayout)
 * [String](#message-std_msgsstring)
+* [AudioData](#message-xrsdkaudiodata)
+* [AudioDataStamped](#message-xrsdkaudiodatastamped)
+* [AudioInfo](#message-xrsdkaudioinfo)
 * [ChassisControlModeParam](#message-xrsdkchassiscontrolmodeparam)
 * [ChassisPosition](#message-xrsdkchassisposition)
 * [ChassisPositionList](#message-xrsdkchassispositionlist)
@@ -155,6 +164,7 @@
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
 * [NavigationModeParam](#message-xrsdknavigationmodeparam)
 * [PingRequest](#message-xrsdkpingrequest)
+* [PlayAudioResponse](#message-xrsdkplayaudioresponse)
 * [PongResponse](#message-xrsdkpongresponse)
 * [PowerStatus](#message-xrsdkpowerstatus)
 * [RobotDynamicInfo](#message-xrsdkrobotdynamicinfo)
@@ -162,6 +172,7 @@
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
 * [SaveMapParam](#message-xrsdksavemapparam)
+* [StopAudioResponse](#message-xrsdkstopaudioresponse)
 * [TactileSensorData](#message-xrsdktactilesensordata)
 
 ### 枚举类型列表
@@ -173,10 +184,99 @@
 * [NavigationMode](#enum-xrsdknavigationmode)
 * [RobotModelType](#enum-xrsdkrobotmodeltype)
 * [RobotWorkMode](#enum-xrsdkrobotworkmode)
+* [VoicePromptPriority](#enum-xrsdkvoicepromptpriority)
 
 ---
 
 ## API 服务
+
+<h3 id="audio">Audio</h3>
+
+音频服务
+
+<h4 id="audio-play_audio">play_audio</h4>
+
+```python
+def play_audio(source: str, volume: int = 80, block: bool = False, priority: int = 2, cache: bool = True, resource_id: Optional[str] = None) -> AudioResult
+```
+
+从本地文件或 URL 上传音频并播放。
+
+音频格式由 client 根据内容自动探测,支持 wav、mp3。
+
+单次上传 ≤ 60 MB,超出会被 client 直接拒绝。
+
+**参数:**
+
+* `source` (str) - 本地文件路径或 http(s):// URL。
+* `volume` (int) - 1-100。
+* `block` (bool) - 是否阻塞直到播放结束。
+* `priority` (int) - 0=紧急, 1=高, 2=普通。
+* `cache` (bool) - 服务端是否缓存该资源以便后续 replay 调用。
+* `resource_id` (Optional[str]) - 可选的缓存键提示,会覆盖服务端自动计算的 sha。
+
+**返回:**
+
+* [`AudioResult`](#message-xrsdkaudioresult)
+
+---
+
+<h4 id="audio-replay">replay</h4>
+
+```python
+def replay(resource_id: str, volume: int = 80, block: bool = False, priority: int = 2) -> AudioResult
+```
+
+按 resource_id 重新播放已缓存的音频。
+
+**参数:**
+
+* `resource_id` (str) - 上一次 play_audio 调用返回的缓存键。
+* `volume` (int) - 1-100。
+* `block` (bool) - 是否阻塞直到播放结束。
+* `priority` (int) - 0=紧急, 1=高, 2=普通。
+
+**返回:**
+
+* [`AudioResult`](#message-xrsdkaudioresult)
+
+---
+
+<h4 id="audio-stop_audio">stop_audio</h4>
+
+```python
+def stop_audio(play_id: int = 0) -> StopAudioResult
+```
+
+停止指定播放任务或全部任务。
+
+**参数:**
+
+* `play_id` (int) - 要停止的 play_id,传 0 表示停止所有排队中或播放中的任务。
+
+**返回:**
+
+* [`StopAudioResult`](#message-xrsdkstopaudioresult)
+
+---
+
+<h4 id="audio-get_audio_stream">get_audio_stream</h4>
+
+```python
+def get_audio_stream() -> Iterator[AudioDataStamped]
+```
+
+订阅麦克风音频帧流,采样率由服务端决定。
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `Iterator[`[`AudioDataStamped`](#message-xrsdkaudiodatastamped)`]`
+
+---
 
 <h3 id="chassiscontroller">ChassisController</h3>
 
@@ -1667,7 +1767,7 @@ def recover_emergency_stop(timeout) -> ExecutionResult
 def set_work_mode(robot_mode_param: RobotModeParam, timeout) -> ExecutionResult
 ```
 
-设置机器人工作模式：IDLE, INFERE, COLLECT, SDK, 目前仅支持SDK模式。
+Set Robot work mode: IDLE, INFERE, COLLECT, SDK
 
 **参数:**
 
@@ -1963,6 +2063,29 @@ Control joint angles,
 **参数:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="waistcontroller-set_end_pose">set_end_pose</h4>
+
+```python
+def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
+```
+
+控制末端执行器位姿（必须先设置END_POSE模式）
+
+position: [x, y, z] in meters, range: [-5.0, 5.0]
+
+orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+
+**参数:**
+
+* `position` ([`Point`](#message-geometry_msgspoint))
+* `orientation` ([`Quaternion`](#message-geometry_msgsquaternion))
 
 **返回:**
 
@@ -2386,6 +2509,45 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 ---
 
+<a id="message-xrsdkaudiodata"></a>
+#### AudioData
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `data` | `bytes` |  |
+
+---
+
+<a id="message-xrsdkaudiodatastamped"></a>
+#### AudioDataStamped
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `audio_info` | [`AudioInfo`](#message-xrsdkaudioinfo) |  |
+| `audio_data` | [`AudioData`](#message-xrsdkaudiodata) |  |
+
+---
+
+<a id="message-xrsdkaudioinfo"></a>
+#### AudioInfo
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `channels` | `uint32` |  |
+| `sample_rate` | `uint32` |  |
+| `sample_format` | `string` |  |
+| `bitrate` | `uint32` |  |
+| `coding_format` | `string` |  |
+| `bit_depth` | `uint32` |  |
+
+---
+
 <a id="message-xrsdkchassiscontrolmodeparam"></a>
 #### ChassisControlModeParam
 
@@ -2537,6 +2699,20 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 ---
 
+<a id="message-xrsdkplayaudioresponse"></a>
+#### PlayAudioResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
+| `play_id` | `uint64` | equals ROS request_id; reserved 0 for "stop all" |
+| `resource_id` | `string` | empty when cache=false |
+
+---
+
 <a id="message-xrsdkpongresponse"></a>
 #### PongResponse
 
@@ -2623,6 +2799,18 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 | 字段 | 类型 | 说明 |
 |------|------|--------|
 | `map_name` | `string` |  |
+
+---
+
+<a id="message-xrsdkstopaudioresponse"></a>
+#### StopAudioResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `success` | `bool` |  |
+| `message` | `string` |  |
 
 ---
 
@@ -2724,9 +2912,20 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 | 值 | 说明 |
 |------|--------|
-| `IDLE` (0) | 机器人处于空闲状态，目前不支持此模式。 |
-| `INFERE` (1) | 机器人处于推理模式，目前不支持此模式。 |
-| `COLLECT` (2) | 机器人处于采集模式，目前不支持此模式。 |
-| `SDK` (3) | 机器人处于SDK模式，目前仅支持此模式。 |
+| `IDLE` (0) | 机器人处于空闲状态 |
+| `INFERE` (1) | 机器人处于推理模式 |
+| `COLLECT` (2) | 机器人处于采集模式 |
+| `SDK` (3) | 机器人处于SDK模式 |
+
+---
+
+<a id="enum-xrsdkvoicepromptpriority"></a>
+#### VoicePromptPriority
+
+| 值 | 说明 |
+|------|--------|
+| `PRIORITY_URGENT` (0) |  |
+| `PRIORITY_HIGH` (1) |  |
+| `PRIORITY_NORMAL` (2) |  |
 
 ---
