@@ -342,18 +342,29 @@ python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode end_pose --a
 
 Quanta_X2 Gripper Control Example, Do not use this example in other model
 
+**Supported gripper types:**
+
+- `g` gripper (default): position range `[0.0, 1.89]`
+- `c` gripper: position range `[0.0, 25.2]`
+
+Specify with `--gripper-type`, default is `g`.
+
 **Functions:**
 
-- `move_gripper()`: Control gripper position
+- `move_gripper()`: Move the gripper to `min / mid / max` of the selected gripper type's range
 - `stream_gripper_data()`: Get gripper joint position stream
 
 **Usage:**
 
 ```bash
 # Get left gripper joint states
-python3 gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
-# Control left gripper
-python3 gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
+python3 quanta_x2/gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
+
+# Control left gripper (default: G gripper, range 0.0~1.89)
+python3 quanta_x2/gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
+
+# Control left gripper (C gripper, range 0.0~25.2)
+python3 quanta_x2/gripper_control.py --action move --server 192.168.10.1:50051 --gripper left --gripper-type c
 ```
 
 ---

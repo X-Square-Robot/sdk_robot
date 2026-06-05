@@ -73,9 +73,10 @@ def create_collection_config_for_quanta_x2() -> CollectionConfig:
 
     # No master arm joint states and end pose
     # No wrist external and local force
-    # Has tactile sensor data
-    collection_config.enable_left_gripper_tactile = True # Collect left finger tactile sensor data
-    collection_config.enable_right_gripper_tactile = True # Collect right finger tactile sensor data
+    # For Quanta_X2, C gripper Has tactile sensor data, G gripper No tactile sensor data
+    # Uncomment the following lines to collect tactile sensor data
+    # collection_config.enable_left_gripper_tactile = True # Collect left gripper tactile sensor data
+    # collection_config.enable_right_gripper_tactile = True # Collect right gripper tactile sensor data
     return collection_config
 
 def create_collection_config_for_desktop() -> CollectionConfig:
