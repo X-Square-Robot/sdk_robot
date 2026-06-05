@@ -342,9 +342,16 @@ python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode end_pose --a
 
 量子2号 夹爪控制示例，其他机型请勿使用该示例
 
+**支持的夹爪类型:**
+
+- `g` 夹爪（默认）：position 范围 `[0.0, 1.89]`
+- `c` 夹爪：position 范围 `[0.0, 25.2]`
+
+通过 `--gripper-type` 指定，默认 `g`。
+
 **功能说明:**
 
-- `move_gripper()`: 控制夹爪位置
+- `move_gripper()`: 控制夹爪位置（按所选夹爪类型的范围依次移动到 `min / mid / max`）
 - `stream_gripper_data()`: 获取夹爪关节位置流
 
 **使用方法:**
@@ -352,8 +359,12 @@ python3 quanta_x2/arm_control.py --server 192.168.10.1:50051 --mode end_pose --a
 ```bash
 # 获取左夹爪关节状态
 python3 quanta_x2/gripper_control.py --action stream --server 192.168.10.1:50051 --gripper left
-# 控制左夹爪
+
+# 控制左夹爪（默认 G 夹爪，range 0.0~1.89）
 python3 quanta_x2/gripper_control.py --action move --server 192.168.10.1:50051 --gripper left
+
+# 控制左夹爪（C 夹爪，range 0.0~25.2）
+python3 quanta_x2/gripper_control.py --action move --server 192.168.10.1:50051 --gripper left --gripper-type c
 ```
 
 ---

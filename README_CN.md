@@ -308,6 +308,23 @@ A:
 
 A: 当前处在其他工作模式，需要在主端控制界面切换到空闲模式
 
+### Q9: betterproto2的版本不匹配
+
+![image](docs/betterproto_ver_mismatch.png)
+
+1.0.7及其之前版本的SDK在运行时可能出现betterproto2的版本不匹配, 请按照下面的命令操作把betterproto2的版本降到0.9.x版本
+
+```bash
+# 卸了再装（防止 0.10 残留）
+pip uninstall -y betterproto2
+
+# 装 0.9.x 的最新 patch
+pip install "betterproto2>=0.9,<0.10"
+
+# 验证
+python -c "import betterproto2, x2robot; print(betterproto2.__version__)"
+```
+
 ## 开发注意事项
 
 - 版本兼容：请使用匹配的固件和SDK版本

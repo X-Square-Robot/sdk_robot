@@ -307,6 +307,23 @@ When controlling or during data playback, the following error appears:
 A:
 The robot is currently in another work mode. Switch to idle mode in the master UI.
 
+### Q9: betterproto2 version mismatch
+
+![image](docs/betterproto_ver_mismatch.png)
+
+SDK version 1.0.7 and earlier may encounter a betterproto2 version mismatch at runtime. Please run the following commands to downgrade betterproto2 to the 0.9.x version:
+
+```bash
+# Uninstall first, then reinstall (to prevent leftover files from 0.10)
+pip uninstall -y betterproto2
+
+# Install the latest patch of 0.9.x
+pip install "betterproto2>=0.9,<0.10"
+
+# Verify
+python -c "import betterproto2, x2robot; print(betterproto2.__version__)"
+```
+
 ## Development Notes
 
 - **Version compatibility**: Use matching firmware and SDK versions
