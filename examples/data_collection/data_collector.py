@@ -29,6 +29,8 @@ import queue
 from collections import defaultdict
 import tempfile
 import pickle
+import bisect
+import shutil
 import os
 import sys
 import signal
@@ -101,6 +103,7 @@ class DataCollector:
         downsample_joint_states: bool = True,
         use_video_storage: bool = False,
         video_codec: str = 'XVID',  # Default to XVID, good compatibility
+        keep_raw_data: bool = False,
     ):
         """Initialize data collector
 
@@ -120,6 +123,10 @@ class DataCollector:
             video_codec: Video codec (default: 'XVID')
                 Recommended: 'XVID' (good compatibility), 'MJPG' (Motion JPEG, best compatibility)
                 Optional: 'mp4v' (MPEG-4), 'avc1' (H.264, requires hardware support)
+            keep_raw_data: Whether to also save the pre-alignment raw streams
+                (sensor / pose / joint / action) into episode_xxxx/raw_data/.
+                Camera frames are NOT included (they are large and duplicate the
+                saved video/images). Default False (no behaviour change).
         """
         self.robot = robot
         self.output_dir = Path(output_dir)
@@ -129,6 +136,7 @@ class DataCollector:
         self.downsample_joint_states = downsample_joint_states
         self.use_video_storage = use_video_storage
         self.video_codec = video_codec
+        self.keep_raw_data = keep_raw_data
 
         # Use provided configuration or default configuration
         self.collection_config = collection_config or CollectionConfig()
@@ -1576,10 +1584,6 @@ class DataCollector:
                 # If not in recording, exit the loop
                 if not self.is_recording:
                     break
-                
-                # If not in recording, exit the loop (thread will stop)
-                if not self.is_recording:
-                    break
 
                 try:
                     timestamp = self._extract_timestamp_from_header(pose_msg)
@@ -1616,7 +1620,7 @@ class DataCollector:
                 self._handle_grpc_error_and_exit(queue_name, e)
             print(f"{queue_name} Stream error: {e}")
             raise
-    
+
     def _convert_ros_msg_to_dict(self, msg, exclude_fields=None):
         """Recursively convert protobuf message object to a JSON serializable dictionary
         
@@ -2584,7 +2588,13 @@ class DataCollector:
         if not validation_result:
             print("Error: data collection validation failed, some enabled data items have no actual data")
             return None
-        
+
+        # Optionally persist the pre-alignment raw streams before temp files are
+        # cleaned up. Done after validation so we don't leave raw_data for an
+        # episode that ultimately fails to save.
+        if self.keep_raw_data:
+            self._save_raw_data(sensor_data)
+
         # Align data by timestamp interpolation
         print("Aligning data by timestamp interpolation...")
         episode_data = self._align_data_by_timestamp(sensor_data, images)
@@ -2598,7 +2608,67 @@ class DataCollector:
             self._cleanup_temp_files()
         
         return episode_data
-    
+
+    def _save_raw_data(self, sensor_data):
+        """Persist pre-alignment raw streams into episode_xxxx/raw_data/.
+
+        Copies the raw sensor/pose/joint/action temp files (exact, lossless,
+        same `(timestamp, value)` pickle stream the collectors wrote) and writes
+        a manifest.json describing each file. Camera frames are intentionally
+        excluded (large, and already stored as video/images).
+
+        Must run while the temp files still exist, i.e. after read-back and
+        before _cleanup_temp_files(). episode_count is the index of the episode
+        currently being saved (matches _save_episode).
+        """
+        try:
+            episode_dir = self.output_dir / f"episode_{self.episode_count:04d}"
+            raw_dir = episode_dir / "raw_data"
+            raw_dir.mkdir(parents=True, exist_ok=True)
+
+            def describe(records):
+                if not records:
+                    return "empty"
+                rec = records[0]
+                if isinstance(rec, tuple) and len(rec) == 4:
+                    return "(timestamp, positions, velocities, efforts)"
+                if isinstance(rec, tuple) and len(rec) == 2:
+                    val = rec[1]
+                    if isinstance(val, dict):
+                        return f"(timestamp, dict[{', '.join(val.keys())}])"
+                    return f"(timestamp, {type(val).__name__})"
+                return f"record_type={type(rec).__name__}"
+
+            manifest = {
+                "episode_id": self.episode_count,
+                "created": datetime.now().isoformat(),
+                "note": "Pre-alignment raw streams. Each .pkl is a sequence of "
+                        "pickled records; read with repeated pickle.load until EOF.",
+                "files": {},
+            }
+
+            copied = 0
+            for name, temp_path in self.sensor_temp_paths.items():
+                if not temp_path or not os.path.exists(temp_path):
+                    continue
+                try:
+                    shutil.copy2(temp_path, raw_dir / f"{name}.pkl")
+                    manifest["files"][f"{name}.pkl"] = {
+                        "records": len(sensor_data.get(name, [])),
+                        "record_format": describe(sensor_data.get(name, [])),
+                    }
+                    copied += 1
+                except Exception as e:
+                    print(f"  ⚠️  Failed to copy raw data for {name}: {e}")
+
+            with open(raw_dir / "manifest.json", "w") as f:
+                json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+            print(f"  ✓ Saved raw data: {copied} streams -> {raw_dir}")
+        except Exception as e:
+            # Never let raw-data saving break the main save flow
+            print(f"  ⚠️  Failed to save raw data: {e}")
+
     def _align_data_by_timestamp(self, sensor_data, images):
         """Align all data to a uniform time grid based on timestamp"""
 
@@ -2647,8 +2717,15 @@ class DataCollector:
         
         for sensor_name, data_list in sensor_data.items():
             if data_list:
-                # When downsampling, the joint state and end pose need linear interpolation
-                if sensor_name in joint_state_names + action_names and self.downsample_joint_states:
+                # End-effector pose: position is linearly interpolated and the
+                # orientation quaternion is SLERP'd (component-wise lerp of a
+                # quaternion is incorrect). This avoids the stair-step / jitter
+                # that nearest-neighbor produces during playback.
+                if sensor_name.endswith('_end_pose') and self.downsample_joint_states:
+                    print(f"   Use pose interpolation (linear position + SLERP quaternion) for {sensor_name}")
+                    aligned_sensor_data[sensor_name] = self._interpolate_pose(data_list, target_timestamps)
+                # When downsampling, the joint state and action need linear interpolation
+                elif sensor_name in joint_state_names + action_names and self.downsample_joint_states:
                     print(f"   Use linear interpolation to align the data of {sensor_name}")
                     if sensor_name in action_names:
                         aligned_action_data[sensor_name] = self._interpolate_linear(data_list, target_timestamps)
@@ -2813,66 +2890,137 @@ class DataCollector:
 
         return aligned_data
 
-    def _interpolate_nearest(self, data_with_timestamps, target_timestamps):
-        """Use nearest neighbor interpolation to align the data to the target timestamps"""
+    def _interpolate_pose(self, data_with_timestamps, target_timestamps):
+        """Align end-effector pose records to target timestamps.
+
+        Position (x, y, z) is linearly interpolated; the orientation quaternion
+        is interpolated with SLERP (shortest path). Records are
+        ``(timestamp, {'position': {...}, 'orientation': {...}})`` and the
+        output preserves that dict structure. Robust to duplicate/boundary
+        timestamps.
+        """
         if not data_with_timestamps:
             return []
 
         sorted_data = sorted(data_with_timestamps, key=lambda x: x[0])
+        ts = [r[0] for r in sorted_data]
+        n = len(sorted_data)
+
+        def pos_of(d):
+            p = d['position']
+            return np.array([p['x'], p['y'], p['z']], dtype=float)
+
+        def quat_of(d):
+            o = d['orientation']
+            return np.array([o['x'], o['y'], o['z'], o['w']], dtype=float)
+
+        def make(pos, quat):
+            return {
+                'position': {'x': float(pos[0]), 'y': float(pos[1]), 'z': float(pos[2])},
+                'orientation': {'x': float(quat[0]), 'y': float(quat[1]),
+                                'z': float(quat[2]), 'w': float(quat[3])},
+            }
+
+        def slerp(q0, q1, t):
+            dot = float(np.dot(q0, q1))
+            # take the shortest path on the quaternion hypersphere
+            if dot < 0.0:
+                q1 = -q1
+                dot = -dot
+            if dot > 0.9995:
+                # nearly aligned -> normalized linear interpolation is accurate
+                q = q0 + t * (q1 - q0)
+            else:
+                theta0 = np.arccos(np.clip(dot, -1.0, 1.0))
+                sin0 = np.sin(theta0)
+                s0 = np.sin((1.0 - t) * theta0) / sin0
+                s1 = np.sin(t * theta0) / sin0
+                q = s0 * q0 + s1 * q1
+            norm = np.linalg.norm(q)
+            return q / norm if norm > 0 else q0
+
         aligned_data = []
-        data_idx = 0
-
         for target_t in target_timestamps:
-            min_diff = float('inf')
-            # Check the data format: the joint state is a 4 element tuple, other is a 2 element tuple
-            first_item = sorted_data[0]
-            if len(first_item) == 4:  # The joint state format: (timestamp, positions, velocities, efforts)
-                closest_data = (first_item[1], first_item[2], first_item[3])  # positions, velocities, efforts
-            else:  # Other format: (timestamp, data)
-                closest_data = first_item[1]
+            pos = bisect.bisect_left(ts, target_t)
+            if pos <= 0:
+                d = sorted_data[0][1]
+                aligned_data.append(make(pos_of(d), quat_of(d)))
+                continue
+            if pos >= n:
+                d = sorted_data[-1][1]
+                aligned_data.append(make(pos_of(d), quat_of(d)))
+                continue
 
-            for i in range(data_idx, len(sorted_data)):
-                item = sorted_data[i]
-                t = item[0]
-                diff = abs(t - target_t)
+            i1, i2 = pos - 1, pos
+            t1, t2 = ts[i1], ts[i2]
+            d1, d2 = sorted_data[i1][1], sorted_data[i2][1]
+            ratio = 0.0 if t2 <= t1 else min(1.0, max(0.0, (target_t - t1) / (t2 - t1)))
 
-                if diff < min_diff:
-                    min_diff = diff
-                    if len(item) == 4:  # The joint state format
-                        closest_data = (item[1], item[2], item[3])  # positions, velocities, efforts
-                    else:  # Other format
-                        closest_data = item[1]
-                    data_idx = i
-                else:
-                    break
+            p1, p2 = pos_of(d1), pos_of(d2)
+            interp_pos = p1 + ratio * (p2 - p1)
+            interp_quat = slerp(quat_of(d1), quat_of(d2), ratio)
+            aligned_data.append(make(interp_pos, interp_quat))
 
-            aligned_data.append(closest_data)
+        return aligned_data
+
+    def _interpolate_nearest(self, data_with_timestamps, target_timestamps):
+        """Use nearest neighbor interpolation to align the data to the target timestamps.
+
+        Robust to repeated/duplicate timestamps in the source data. The previous
+        forward-scan implementation advanced its cursor only when the diff strictly
+        decreased and broke on the first non-decrease; a run of identical source
+        timestamps (which the end-pose stream produces frequently) made the diff
+        plateau, so the cursor stalled on the first element of that run and every
+        later frame collapsed to the same value (the "frozen pose" bug).
+        """
+        if not data_with_timestamps:
+            return []
+
+        sorted_data = sorted(data_with_timestamps, key=lambda x: x[0])
+        timestamps = [item[0] for item in sorted_data]
+        n = len(sorted_data)
+
+        def value_at(idx):
+            item = sorted_data[idx]
+            if len(item) == 4:  # joint state: (timestamp, positions, velocities, efforts)
+                return (item[1], item[2], item[3])
+            return item[1]  # other format: (timestamp, data)
+
+        aligned_data = []
+        for target_t in target_timestamps:
+            pos = bisect.bisect_left(timestamps, target_t)
+            if pos <= 0:
+                best = 0
+            elif pos >= n:
+                best = n - 1
+            else:
+                # nearest of the two neighbours straddling target_t
+                best = pos if (timestamps[pos] - target_t) < (target_t - timestamps[pos - 1]) else pos - 1
+            aligned_data.append(value_at(best))
 
         return aligned_data
     
     def _interpolate_nearest_indices(self, timestamps, target_timestamps):
-        """Use nearest neighbor interpolation to return the index mapping (for video mode)"""
+        """Use nearest neighbor interpolation to return the index mapping (for video mode).
+
+        Assumes `timestamps` is sorted ascending (camera frame timestamps are
+        monotonic). Robust to duplicate timestamps (see _interpolate_nearest).
+        """
         if not timestamps:
             return []
-        
+
+        n = len(timestamps)
         indices = []
-        data_idx = 0
-        
+
         for target_t in target_timestamps:
-            min_diff = float('inf')
-            closest_idx = 0
-            
-            for i in range(data_idx, len(timestamps)):
-                t = timestamps[i]
-                diff = abs(t - target_t)
-                
-                if diff < min_diff:
-                    min_diff = diff
-                    closest_idx = i
-                    data_idx = i
-                else:
-                    break
-            
+            pos = bisect.bisect_left(timestamps, target_t)
+            if pos <= 0:
+                closest_idx = 0
+            elif pos >= n:
+                closest_idx = n - 1
+            else:
+                closest_idx = pos if (timestamps[pos] - target_t) < (target_t - timestamps[pos - 1]) else pos - 1
+
             indices.append(closest_idx)
         
         return indices
@@ -3328,12 +3476,13 @@ class DataCollector:
                             # If the data format is different, save it directly
                             frame_data["observation"][sensor_name] = sensor_value
                         
-                        # Add the action of end_pose (using the data of the next frame)
+                        # Add the action of end_pose (the target pose = next frame's pose).
+                        action_name = sensor_name.replace('_end_pose', '_end_pose_action')
                         if i + 1 < len(sensor_data_list):
                             next_sensor_value = sensor_data_list[i + 1]
                             if isinstance(next_sensor_value, dict) and 'data' in next_sensor_value:
+                                # Legacy protobuf-wrapped format.
                                 next_pose_data = next_sensor_value['data']
-                                action_name = sensor_name.replace('_end_pose', '_end_pose_action')
                                 frame_data["action"][action_name] = {
                                     'position': {
                                         'x': next_pose_data.position.x if hasattr(next_pose_data, 'position') else 0,
@@ -3347,13 +3496,23 @@ class DataCollector:
                                         'w': next_pose_data.orientation.w if hasattr(next_pose_data, 'orientation') else 1,
                                     }
                                 }
+                            elif isinstance(next_sensor_value, dict) and 'position' in next_sensor_value:
+                                # Normal aligned format: copy the next frame's pose so the
+                                # action is the target pose (independent dict, no aliasing).
+                                np_pos = next_sensor_value['position']
+                                np_ori = next_sensor_value['orientation']
+                                frame_data["action"][action_name] = {
+                                    'position': {'x': np_pos['x'], 'y': np_pos['y'], 'z': np_pos['z']},
+                                    'orientation': {
+                                        'x': np_ori['x'], 'y': np_ori['y'],
+                                        'z': np_ori['z'], 'w': np_ori['w'],
+                                    }
+                                }
                             else:
-                                # If there is no next frame or the format is different, use the current frame as action
-                                action_name = sensor_name.replace('_end_pose', '_end_pose_action')
+                                # Unknown format: fall back to current frame.
                                 frame_data["action"][action_name] = frame_data["observation"][sensor_name]
                         else:
-                            # The last frame, use the current frame as action
-                            action_name = sensor_name.replace('_end_pose', '_end_pose_action')
+                            # The last frame, use the current frame as action.
                             frame_data["action"][action_name] = frame_data["observation"][sensor_name]
 
                     elif sensor_name == 'odometry':

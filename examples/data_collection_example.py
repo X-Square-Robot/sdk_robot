@@ -98,6 +98,7 @@ def create_collection_config_for_desktop() -> CollectionConfig:
 
 def main(
     server: Annotated[str, typer.Option(help="server address, e.g., localhost:50051")] = "localhost:50051",
+    keep_raw_data: Annotated[bool, typer.Option(help="also save pre-alignment raw streams into episode_xxxx/raw_data/")] = False,
 ):
     # Register signal handler
     signal.signal(signal.SIGINT, signal_handler)
@@ -125,7 +126,8 @@ def main(
         collection_config=collection_config,
         image_quality=95,                  # JPEG quality
         downsample_joint_states=True,       # Whether to downsample joint states, recommended to enable (eg: 500Hz -> target_hz=60Hz)
-        use_video_storage=True
+        use_video_storage=True,
+        keep_raw_data=keep_raw_data,  # Save raw pre-alignment streams when --keep-raw-data is passed
     )
 
     print("\n" + "="*60)
@@ -134,6 +136,7 @@ def main(
     print(f"Output directory: {collector.output_dir}")
     print(f"Target frequency: {collector.target_hz} Hz")
     print(f"Image storage: {'MP4 video' if collector.use_video_storage else 'JPG image'}")
+    print(f"Keep raw data: {'Yes (episode_xxxx/raw_data/)' if collector.keep_raw_data else 'No'}")
     print("\nTips:")
     print("  - start_recording() will start all data collection threads automatically")
     print("  - stop_recording() will stop all threads automatically and save data")
