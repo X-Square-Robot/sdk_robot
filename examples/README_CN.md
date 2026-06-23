@@ -71,6 +71,71 @@ python check_connect.py --server 192.168.10.1:50051
 
 ---
 
+## MasterArm control examples
+
+**功能说明:**
+
+- MasterArm 专用控制示例，使用 `robot.master_left_arm` / `robot.master_right_arm`
+- 主臂模式由各自 arm stub 设置：`master_left_arm.set_control_mode()` / `master_right_arm.set_control_mode()`
+- 写入执行逻辑保留普通 `arm_control.py` 中可复用的 TOPPRA 连续轨迹：关节空间 TOPPRA、末端 position TOPPRA + SLERP
+- 支持只读、snapshot、切模式、关节写入、末端写入、zero、关节/末端/gripper stream
+- 支持 `--arm both` 同时控制左右主臂；stream 建议左右分终端运行
+- 写操作需要 `--write`
+
+**脚本:**
+
+- `examples/desktop/master_arm_control.py`
+  - 默认 server：`192.168.10.1:50051`
+  - 默认 model：`desktop`
+- `examples/quanta_x1/master_arm_control.py`
+  - 默认 server：`192.168.10.1:50051`
+  - 默认 model：`auto`
+
+**使用方法:**
+
+```bash
+# Desktop: 左右主臂快照
+python3 desktop/master_arm_control.py \
+  --arm both \
+  --action snapshot
+
+# Desktop: 左主臂 joint stream 读取 10 条
+python3 desktop/master_arm_control.py \
+  --arm left \
+  --action stream \
+  --stream joint-states \
+  --samples 10
+
+# Desktop: 左主臂 joint1 小幅动作，随后回原
+python3 desktop/master_arm_control.py \
+  --arm left \
+  --action move \
+  --mode joint-pos \
+  --joint-index 0 \
+  --joint-delta 0.05 \
+  --write
+
+# Quanta X1: 只读左主臂
+python3 quanta_x1/master_arm_control.py \
+  --server 192.168.10.1:50051 \
+  --model quanta_x1 \
+  --arm left \
+  --action read
+
+# Quanta X1: 左主臂末端 z +2cm，随后回原
+python3 quanta_x1/master_arm_control.py \
+  --server 192.168.10.1:50051 \
+  --model quanta_x1 \
+  --arm left \
+  --action move \
+  --mode end-pose \
+  --axis z \
+  --pose-delta 0.02 \
+  --write
+```
+
+---
+
 ## robot_control.py
 
 **功能说明:**

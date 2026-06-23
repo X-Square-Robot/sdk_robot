@@ -5,7 +5,7 @@ from x2robot import Robot, connect
 from x2robot.sdk import ChassisControlMode, ChassisControlModeParam, ChassisPosition, ChassisVelocity
 from x2robot.sdk import RobotModeParam, RobotWorkMode
 import time
-from x2robot.sdk import SaveMapParam
+from x2robot.sdk import SaveMapParam, StartLocalizationParam
 from x2robot.sdk import NavigationMode, NavigationModeParam
 import sys
 import termios
@@ -74,7 +74,7 @@ def move_to_global_position(robot: Robot):
     current_position = robot.chassis.get_global_position()
     print(f"current global position: x={current_position.x}, y={current_position.y}, yaw={current_position.yaw}")
 
-def move_to_relative_position(robot: Robot):
+def move_to_relative_position(robot: Robot, cancel: bool = False):
     # need to set control mode to relative first and set virtual zero point first
     current_position = robot.chassis.get_global_position()
     print(f"current global position: x={current_position.x}, y={current_position.y}, yaw={current_position.yaw}")
@@ -82,7 +82,8 @@ def move_to_relative_position(robot: Robot):
     robot.chassis.set_control_mode(ChassisControlModeParam(mode=ChassisControlMode.RELATIVE))
     print(f"move to relative position 0.85 meters forward")
     robot.chassis.move_to_relative_position(ChassisPosition(x=0.85, y=0.0, yaw=0.0))
-    time.sleep(2.0)
+    if not cancel:
+        time.sleep(2.0)
     current_position = robot.chassis.get_relative_position()
     print(f"current relative position: x={current_position.x}, y={current_position.y}, yaw={current_position.yaw}")
 
@@ -125,7 +126,7 @@ def get_chassis_odometry(robot: Robot):
     current_position = current_odometry.pose.pose.position
     print(current_position)
 
-def move_by_map(robot: Robot):
+def move_by_map(robot: Robot, cancel: bool = False):
     result = robot.navigation.set_navigation_mode(NavigationModeParam(mode=NavigationMode.BUILT_IN_NAVIGATION))
     print(f"set built-in navigation mode success: {result.is_success}")
 
@@ -146,12 +147,19 @@ def move_by_map(robot: Robot):
     result = robot.navigation.stop_mapping(SaveMapParam(map_name=map_name))
     print(f"stop mapping success: {result.is_success}")
 
-    result = robot.navigation.start_localization(SaveMapParam(map_name=map_name))
+    result = robot.navigation.start_localization(StartLocalizationParam(map_name=map_name, use_init_pose=False))
     print(f"start localization success: {result.is_success}")
 
     time.sleep(2.0)
 
-    move_to_relative_position(robot)
+    move_to_relative_position(robot, cancel=cancel)
+
+    if cancel:
+        cancel_result = robot.navigation.cancel_navigation()
+        print(
+            f"cancel navigation called: success={cancel_result.is_success}, "
+            f"error={cancel_result.error_message}"
+        )
 
     get_chassis_odometry(robot)
 
@@ -301,7 +309,7 @@ def move_by_keyboard(robot: Robot):
 
 def main(
     server: Annotated[str, typer.Option(help="server address, e.g., localhost:50051")] = "localhost:50051",
-    control_mode: Annotated[str, typer.Option(help="control mode: map, keyboard")] = "keyboard",
+    control_mode: Annotated[str, typer.Option(help="control mode: map, map_cancel, keyboard")] = "keyboard",
 ):
     robot = connect(f"x2://{server}")
 
@@ -320,14 +328,20 @@ def main(
         print("Please make sure there is enough space around the robot to move!!!")
         if not input("continue? (y/n): ").lower() == "y":
             return
-        move_by_map(robot)
+        move_by_map(robot, cancel=False)
+    elif control_mode == "map_cancel":
+        print("This example will run map flow and trigger cancel path.")
+        print("Please make sure there is enough free space around the robot.")
+        if not input("continue? (y/n): ").lower() == "y":
+            return
+        move_by_map(robot, cancel=True)
     elif control_mode == "keyboard":
         print("Ready to start keyboard control, please ensure there is enough space!!!")
         if not input("continue? (y/n): ").lower() == "y":
             return
         move_by_keyboard(robot)
     else:
-        print(f"unknown control mode: {control_mode}, please choose from map, or keyboard")
+        print(f"unknown control mode: {control_mode}, please choose from map, map_cancel, or keyboard")
         return
 
 if __name__ == "__main__":

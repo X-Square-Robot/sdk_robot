@@ -29,9 +29,16 @@ bash samples/quanta_x1/scripts/start_sdk_ex001.sh
 
 ### 🧠 推理流程说明
 
-- 每一次推理表示 发送一条指令并接收模型返回结果。
-- 每完成一次推理后，需要按回车键（Enter） 才会继续执行下一步。
-- 该方式适合进行分步调试与交互验证。
+- **整体流程（简述）**：
+  - 连接 **模型服务**（WebSocket），并接收服务端 `metadata`
+  - 连接 **机器人 SDK 服务**（`x2://<ROBOT_SDK_URL>`），设置机器人为 SDK 工作模式，并初始化底盘/导航/机械臂等控制模式
+  - 进入循环：采集机器人当前观测（状态 + 相机图像）→ 发送给模型服务 → 接收模型预测的动作序列 → 通过 SDK 下发到机器人执行（可选插值平滑）
+- **一次推理循环对应的代码逻辑**：
+  - `_collect_sensor_data()`：从机器人读取状态/相机图像，组装为模型输入
+  - `predict_sync()`：通过 WebSocket 发送输入（msgpack 序列化）并等待模型返回
+  - `_execute_actions()`：解析模型输出（臂/夹爪/头/升降/底盘等），并调用 SDK 接口执行
+- **分步调试（Enter）**：
+  - 启动脚本默认带 `--debug-step`，在每轮采集与请求下一段动作 chunk 之前，会提示按回车继续，方便交互验证。
 
 ### ⚙️ 默认配置说明
 
@@ -40,10 +47,11 @@ bash samples/quanta_x1/scripts/start_sdk_ex001.sh
 | 参数名 | 说明 | 默认值 |
 |  ----  | ----  | ----  |
 |`MODEL_ADDRESS` | 模型服务IP地址 |  `39.101.65.229` |
-|`MODEL_PORT` | 模型服务端口 | `30012` |
+|`MODEL_PORT` | 模型服务端口 | `1174` |
 |`INSTRUCTION` | 初始发送给模型的指令 |（空）|
 |`CONTROL_MODE` | 机器人控制模式 | `end_pose` |
 |`INTERPOLATE_MULTIPLIER` | 动作插值倍率 |`20` |
+|`ROBOT_SDK_URL` | 机器人SDK地址 | `192.168.10.1:50051` |
 
 ### 📌 注意事项
 

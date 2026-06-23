@@ -67,6 +67,9 @@
    * [set_navigation_mode](#navigation-set_navigation_mode)
    * [start_localization](#navigation-start_localization)
    * [stop_localization](#navigation-stop_localization)
+   * [cancel_navigation](#navigation-cancel_navigation)
+   * [load_map](#navigation-load_map)
+   * [export_map](#navigation-export_map)
 * [RadarService](#radarservice)
    * [get_laser_scan](#radarservice-get_laser_scan)
    * [get_laser_scan_stream](#radarservice-get_laser_scan_stream)
@@ -100,6 +103,7 @@
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
    * [get_dynamic_info](#system-get_dynamic_info)
+   * [get_model_type](#system-get_model_type)
 * [Tof](#tof)
    * [get_chassis_tof1](#tof-get_chassis_tof1)
    * [get_chassis_tof2](#tof-get_chassis_tof2)
@@ -156,12 +160,17 @@
 * [ChassisPositionList](#message-xrsdkchassispositionlist)
 * [ChassisVelocity](#message-xrsdkchassisvelocity)
 * [CoordinateSystemModeParam](#message-xrsdkcoordinatesystemmodeparam)
+* [DownloadMeta](#message-xrsdkdownloadmeta)
+* [DownloadRequest](#message-xrsdkdownloadrequest)
+* [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
+* [FileTransferMeta](#message-xrsdkfiletransfermeta)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [HeadPose](#message-xrsdkheadpose)
 * [JointPositions](#message-xrsdkjointpositions)
 * [LiftPosition](#message-xrsdkliftposition)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
+* [ModelTypeResult](#message-xrsdkmodeltyperesult)
 * [NavigationModeParam](#message-xrsdknavigationmodeparam)
 * [PingRequest](#message-xrsdkpingrequest)
 * [PlayAudioResponse](#message-xrsdkplayaudioresponse)
@@ -172,8 +181,10 @@
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
 * [SaveMapParam](#message-xrsdksavemapparam)
+* [StartLocalizationParam](#message-xrsdkstartlocalizationparam)
 * [StopAudioResponse](#message-xrsdkstopaudioresponse)
 * [TactileSensorData](#message-xrsdktactilesensordata)
+* [UploadRequest](#message-xrsdkuploadrequest)
 
 ### Enum Types
 
@@ -283,7 +294,7 @@ Stream microphone audio frames. Sample rate is determined by the server.
 <h4 id="chassiscontroller-set_control_mode">set_control_mode</h4>
 
 ```python
-def set_control_mode(chassis_control_mode_param: ChassisControlModeParam, timeout) -> ExecutionResult
+def set_control_mode(manipulator_control_mode_param: ManipulatorControlModeParam, timeout) -> ExecutionResult
 ```
 
 Set control mode: global position, relative position, or velocity control
@@ -301,7 +312,7 @@ Set control mode: global position, relative position, or velocity control
 <h4 id="chassiscontroller-get_control_mode">get_control_mode</h4>
 
 ```python
-def get_control_mode(timeout) -> ChassisControlModeParam
+def get_control_mode(timeout) -> ManipulatorControlModeParam
 ```
 
 Get current control mode
@@ -1239,14 +1250,14 @@ Set navigation mode (enable/disable built-in navigation algorithm)
 <h4 id="navigation-start_localization">start_localization</h4>
 
 ```python
-def start_localization(save_map_param: SaveMapParam, timeout) -> ExecutionResult
+def start_localization(start_localization_param: StartLocalizationParam, timeout) -> ExecutionResult
 ```
 
 Start localization
 
 **Parameters:**
 
-* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam))
+* `start_localization_param` ([`StartLocalizationParam`](#message-xrsdkstartlocalizationparam))
 
 **Returns:**
 
@@ -1269,6 +1280,60 @@ Stop localization
 **Returns:**
 
 * [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="navigation-cancel_navigation">cancel_navigation</h4>
+
+```python
+def cancel_navigation(timeout) -> ExecutionResult
+```
+
+Cancel current navigation task
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="navigation-load_map">load_map</h4>
+
+```python
+def load_map(messages: Iterable[UploadRequest], timeout) -> ExecutionResult
+```
+
+Load a map package (tar.gz of a directory) into the robot.
+
+**Parameters:**
+
+* `upload_request` ([`UploadRequest`](#message-xrsdkuploadrequest))
+
+**Returns:**
+
+* `Iterator[[`ExecutionResult`](#message-xrsdkexecutionresult)]`: Stream of ExecutionResult
+
+---
+
+<h4 id="navigation-export_map">export_map</h4>
+
+```python
+def export_map(download_request: DownloadRequest, timeout) -> Iterator[DownloadResponse]
+```
+
+Export a map from the robot as a tar.gz stream of a directory.
+
+**Parameters:**
+
+* `download_request` ([`DownloadRequest`](#message-xrsdkdownloadrequest))
+
+**Returns:**
+
+* `Iterator[[`DownloadResponse`](#message-xrsdkdownloadresponse)]`: Stream of DownloadResponse
 
 ---
 
@@ -1812,6 +1877,24 @@ Get Robot runtime info
 **Returns:**
 
 * [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo)
+
+---
+
+<h4 id="system-get_model_type">get_model_type</h4>
+
+```python
+def get_model_type(timeout) -> ModelTypeResult
+```
+
+Get robot model type (works on all models, does not depend on application node)
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ModelTypeResult`](#message-xrsdkmodeltyperesult)
 
 ---
 
@@ -2608,6 +2691,40 @@ Get End Pose stream
 
 ---
 
+<a id="message-xrsdkdownloadmeta"></a>
+#### DownloadMeta
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_size` | `uint64` |  |
+
+---
+
+<a id="message-xrsdkdownloadrequest"></a>
+#### DownloadRequest
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `identifier` | `string` |  |
+
+---
+
+<a id="message-xrsdkdownloadresponse"></a>
+#### DownloadResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `meta` | [`DownloadMeta`](#message-xrsdkdownloadmeta) |  |
+| `chunk` | `bytes` |  |
+
+---
+
 <a id="message-xrsdkexecutionresult"></a>
 #### ExecutionResult
 
@@ -2618,6 +2735,18 @@ Get End Pose stream
 | `is_success` | `bool` |  |
 | `error_message` | `string` |  |
 | `error_code` | `ErrorCode` | Detailed error classification |
+
+---
+
+<a id="message-xrsdkfiletransfermeta"></a>
+#### FileTransferMeta
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `identifier` | `string` |  |
+| `total_size` | `uint64` |  |
 
 ---
 
@@ -2674,6 +2803,17 @@ Get End Pose stream
 | Field | Type | Description |
 |-------|------|-------------|
 | `mode` | [`ManipulatorControlMode`](#enum-xrsdkmanipulatorcontrolmode) |  |
+
+---
+
+<a id="message-xrsdkmodeltyperesult"></a>
+#### ModelTypeResult
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `model_type` | [`RobotModelType`](#enum-xrsdkrobotmodeltype) |  |
 
 ---
 
@@ -2802,6 +2942,19 @@ Get End Pose stream
 
 ---
 
+<a id="message-xrsdkstartlocalizationparam"></a>
+#### StartLocalizationParam
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `map_name` | `string` | Map name used for localization |
+| `use_init_pose` | `bool` | Whether to use initial pose for localization |
+| `init_pose` | [`Pose`](#message-geometry_msgspose) | Initial pose in map coordinate system, valid only when use_init_pose is true |
+
+---
+
 <a id="message-xrsdkstopaudioresponse"></a>
 #### StopAudioResponse
 
@@ -2829,6 +2982,18 @@ Get End Pose stream
 | `directions` | List[`int32`] |  |
 | `capacitances` | List[`uint32`] |  |
 | `error_codes` | List[`uint32`] |  |
+
+---
+
+<a id="message-xrsdkuploadrequest"></a>
+#### UploadRequest
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `meta` | [`FileTransferMeta`](#message-xrsdkfiletransfermeta) |  |
+| `chunk` | `bytes` |  |
 
 ---
 
@@ -2903,6 +3068,7 @@ map coordinate system is used for map based navigation. need to set this mode be
 | `CX002` (1) |  |
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
+| `EX001_MASTER` (4) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

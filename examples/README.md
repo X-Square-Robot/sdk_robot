@@ -71,6 +71,71 @@ python check_connect.py --server 192.168.10.1:50051
 
 ---
 
+## MasterArm control examples
+
+**Functions:**
+
+- MasterArm-specific control example using `robot.master_left_arm` / `robot.master_right_arm`
+- Sets MasterArm mode through each arm stub: `master_left_arm.set_control_mode()` / `master_right_arm.set_control_mode()`
+- Keeps the reusable TOPPRA trajectory logic from ordinary `arm_control.py`: joint-space TOPPRA and end-pose position TOPPRA + SLERP
+- Supports read, snapshot, set mode, joint writes, end-pose writes, zero, and joint/end-pose/gripper streams
+- Supports `--arm both` to control left and right MasterArm together; run streams in separate terminals
+- Write actions require `--write`
+
+**Scripts:**
+
+- `examples/desktop/master_arm_control.py`
+  - Default server: `192.168.10.1:50051`
+  - Default model: `desktop`
+- `examples/quanta_x1/master_arm_control.py`
+  - Default server: `192.168.10.1:50051`
+  - Default model: `auto`
+
+**Usage:**
+
+```bash
+# Desktop: snapshot both MasterArms
+python3 desktop/master_arm_control.py \
+  --arm both \
+  --action snapshot
+
+# Desktop: stream 10 left MasterArm joint samples
+python3 desktop/master_arm_control.py \
+  --arm left \
+  --action stream \
+  --stream joint-states \
+  --samples 10
+
+# Desktop: move left MasterArm joint1 by a small delta, then return
+python3 desktop/master_arm_control.py \
+  --arm left \
+  --action move \
+  --mode joint-pos \
+  --joint-index 0 \
+  --joint-delta 0.05 \
+  --write
+
+# Quanta X1: read left MasterArm
+python3 quanta_x1/master_arm_control.py \
+  --server 192.168.10.1:50051 \
+  --model quanta_x1 \
+  --arm left \
+  --action read
+
+# Quanta X1: move left MasterArm end pose z by 2cm, then return
+python3 quanta_x1/master_arm_control.py \
+  --server 192.168.10.1:50051 \
+  --model quanta_x1 \
+  --arm left \
+  --action move \
+  --mode end-pose \
+  --axis z \
+  --pose-delta 0.02 \
+  --write
+```
+
+---
+
 ## robot_control.py
 
 **Functions:**
