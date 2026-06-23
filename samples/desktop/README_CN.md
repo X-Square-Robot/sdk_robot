@@ -29,9 +29,16 @@ bash samples/desktop/scripts/start_sdk_desktop.sh
 
 ### 🧠 推理流程说明
 
-- 每一次推理表示 发送一条指令并接收模型返回结果。
-- 每完成一次推理后，需要按回车键（Enter） 才会继续执行下一步。
-- 该方式适合进行分步调试与交互验证。
+- **整体流程（简述）**：
+  - 连接 **模型服务**（WebSocket），并接收服务端 `metadata`
+  - 连接 **机器人 SDK 服务**（`x2://<ROBOT_SDK_URL>`），设置机器人为 SDK 工作模式与控制模式
+  - 进入循环：采集机器人当前观测（状态 + 相机图像）→ 发送给模型服务 → 接收模型预测的动作序列 → 通过 SDK 下发到机器人执行（可选插值平滑）
+- **一次推理循环对应的代码逻辑**：
+  - `_collect_sensor_data()`：从机器人读取状态/相机图像，组装为模型输入
+  - `predict_sync()`：通过 WebSocket 发送输入（msgpack 序列化）并等待模型返回
+  - `_execute_actions()`：解析模型输出并调用 SDK 接口控制机器人执行
+- **关于“按回车逐步执行”**：
+  - 当前 Desktop sample 虽然启动脚本传了 `--debug-step`，但 `DesktopClient` 里并没有实现按回车暂停的逻辑；因此默认会连续运行（需要逐步调试请参考 `Quanta_X1` sample 的 `debug_step` 行为，或自行在 DesktopClient 中加入断点/交互暂停）。
 
 ### ⚙️ 默认配置说明
 
@@ -43,7 +50,7 @@ bash samples/desktop/scripts/start_sdk_desktop.sh
 |`MODEL_PORT` | 模型服务端口 | `1175` |
 |`INSTRUCTION` | 初始发送给模型的指令 | `Pick up the green cup and place it on the tray` |
 |`CONTROL_MODE` | 机器人控制模式 | `end_pose` |
-|`INTERPOLATE_MULTIPLIER` | 动作插值倍率 |`20` |
+|`INTERPOLATE_MULTIPLIER` | 动作插值倍率 |`10` |
 |`ROBOT_SDK_URL` | 机器人SDK地址 | `192.168.10.1:50051` |
 
 ### 📌 注意事项

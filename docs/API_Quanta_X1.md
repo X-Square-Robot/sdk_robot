@@ -66,12 +66,28 @@
    * [get_lift_position](#liftcontroller-get_lift_position)
    * [get_joint_states_stream](#liftcontroller-get_joint_states_stream)
 * [MasterLeftArm](#masterleftarm)
+   * [get_control_mode](#masterleftarm-get_control_mode)
+   * [set_control_mode](#masterleftarm-set_control_mode)
+   * [get_joint_states](#masterleftarm-get_joint_states)
+   * [get_end_pose](#masterleftarm-get_end_pose)
+   * [get_gripper_position](#masterleftarm-get_gripper_position)
    * [get_joint_states_stream](#masterleftarm-get_joint_states_stream)
    * [get_end_pose_stream](#masterleftarm-get_end_pose_stream)
+   * [get_gripper_state_stream](#masterleftarm-get_gripper_state_stream)
+   * [set_joint_positions](#masterleftarm-set_joint_positions)
+   * [set_end_pose](#masterleftarm-set_end_pose)
    * [get_gripper_joint_states_stream](#masterleftarm-get_gripper_joint_states_stream)
 * [MasterRightArm](#masterrightarm)
+   * [get_control_mode](#masterrightarm-get_control_mode)
+   * [set_control_mode](#masterrightarm-set_control_mode)
+   * [get_joint_states](#masterrightarm-get_joint_states)
+   * [get_end_pose](#masterrightarm-get_end_pose)
+   * [get_gripper_position](#masterrightarm-get_gripper_position)
    * [get_joint_states_stream](#masterrightarm-get_joint_states_stream)
    * [get_end_pose_stream](#masterrightarm-get_end_pose_stream)
+   * [get_gripper_state_stream](#masterrightarm-get_gripper_state_stream)
+   * [set_joint_positions](#masterrightarm-set_joint_positions)
+   * [set_end_pose](#masterrightarm-set_end_pose)
    * [get_gripper_joint_states_stream](#masterrightarm-get_gripper_joint_states_stream)
 * [Navigation](#navigation)
    * [start_mapping](#navigation-start_mapping)
@@ -79,6 +95,9 @@
    * [set_navigation_mode](#navigation-set_navigation_mode)
    * [start_localization](#navigation-start_localization)
    * [stop_localization](#navigation-stop_localization)
+   * [cancel_navigation](#navigation-cancel_navigation)
+   * [load_map](#navigation-load_map)
+   * [export_map](#navigation-export_map)
 * [RadarService](#radarservice)
    * [get_laser_scan](#radarservice-get_laser_scan)
    * [get_laser_scan_stream](#radarservice-get_laser_scan_stream)
@@ -112,6 +131,7 @@
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
    * [get_dynamic_info](#system-get_dynamic_info)
+   * [get_model_type](#system-get_model_type)
 * [Tof](#tof)
    * [get_chassis_tof1](#tof-get_chassis_tof1)
    * [get_chassis_tof2](#tof-get_chassis_tof2)
@@ -163,12 +183,17 @@
 * [ChassisPositionList](#message-xrsdkchassispositionlist)
 * [ChassisVelocity](#message-xrsdkchassisvelocity)
 * [CoordinateSystemModeParam](#message-xrsdkcoordinatesystemmodeparam)
+* [DownloadMeta](#message-xrsdkdownloadmeta)
+* [DownloadRequest](#message-xrsdkdownloadrequest)
+* [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
+* [FileTransferMeta](#message-xrsdkfiletransfermeta)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [HeadPose](#message-xrsdkheadpose)
 * [JointPositions](#message-xrsdkjointpositions)
 * [LiftPosition](#message-xrsdkliftposition)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
+* [ModelTypeResult](#message-xrsdkmodeltyperesult)
 * [NavigationModeParam](#message-xrsdknavigationmodeparam)
 * [PingRequest](#message-xrsdkpingrequest)
 * [PlayAudioResponse](#message-xrsdkplayaudioresponse)
@@ -179,8 +204,10 @@
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
 * [SaveMapParam](#message-xrsdksavemapparam)
+* [StartLocalizationParam](#message-xrsdkstartlocalizationparam)
 * [StopAudioResponse](#message-xrsdkstopaudioresponse)
 * [TactileSensorData](#message-xrsdktactilesensordata)
+* [UploadRequest](#message-xrsdkuploadrequest)
 
 ### Enum Types
 
@@ -290,7 +317,7 @@ Stream microphone audio frames. Sample rate is determined by the server.
 <h4 id="chassiscontroller-set_control_mode">set_control_mode</h4>
 
 ```python
-def set_control_mode(chassis_control_mode_param: ChassisControlModeParam, timeout) -> ExecutionResult
+def set_control_mode(manipulator_control_mode_param: ManipulatorControlModeParam, timeout) -> ExecutionResult
 ```
 
 Set control mode: global position, relative position, or velocity control
@@ -308,7 +335,7 @@ Set control mode: global position, relative position, or velocity control
 <h4 id="chassiscontroller-get_control_mode">get_control_mode</h4>
 
 ```python
-def get_control_mode(timeout) -> ChassisControlModeParam
+def get_control_mode(timeout) -> ManipulatorControlModeParam
 ```
 
 Get current control mode
@@ -1284,6 +1311,99 @@ Get Joint state stream
 
 <h3 id="masterleftarm">MasterLeftArm</h3>
 
+============================================================================
+
+<h4 id="masterleftarm-get_control_mode">get_control_mode</h4>
+
+```python
+def get_control_mode(timeout) -> ManipulatorControlModeParam
+```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)
+
+---
+
+<h4 id="masterleftarm-set_control_mode">set_control_mode</h4>
+
+```python
+def set_control_mode(manipulator_control_mode_param: ManipulatorControlModeParam, timeout) -> ExecutionResult
+```
+
+**Parameters:**
+
+* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam))
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterleftarm-get_joint_states">get_joint_states</h4>
+
+```python
+def get_joint_states(timeout) -> _sensor_msgs__.JointState
+```
+
+Get joint states
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h4 id="masterleftarm-get_end_pose">get_end_pose</h4>
+
+```python
+def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
+```
+
+Get End Pose
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`PoseStamped`](#message-geometry_msgsposestamped)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `pose` ([`Pose`](#message-geometry_msgspose))
+
+---
+
+<h4 id="masterleftarm-get_gripper_position">get_gripper_position</h4>
+
+```python
+def get_gripper_position(timeout) -> GripperPosition
+```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`GripperPosition`](#message-xrsdkgripperposition)
+
+---
+
 <h4 id="masterleftarm-get_joint_states_stream">get_joint_states_stream</h4>
 
 ```python
@@ -1327,11 +1447,66 @@ Get End Pose stream
 
 ---
 
+<h4 id="masterleftarm-get_gripper_state_stream">get_gripper_state_stream</h4>
+
+```python
+def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
+```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: Stream of GripperPosition
+
+---
+
+<h4 id="masterleftarm-set_joint_positions">set_joint_positions</h4>
+
+```python
+def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
+```
+
+**Parameters:**
+
+* `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterleftarm-set_end_pose">set_end_pose</h4>
+
+```python
+def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
+```
+
+Control end effector pose (must set END_POSE mode first)
+position: [x, y, z] in meters, range: [-5.0, 5.0]
+orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+
+**Parameters:**
+
+* `position` ([`Point`](#message-geometry_msgspoint))
+* `orientation` ([`Quaternion`](#message-geometry_msgsquaternion))
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
 <h4 id="masterleftarm-get_gripper_joint_states_stream">get_gripper_joint_states_stream</h4>
 
 ```python
 def get_gripper_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
+
+Backward compatibility for old API shape.
 
 **Parameters:**
 
@@ -1349,6 +1524,97 @@ def get_gripper_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointSta
 ---
 
 <h3 id="masterrightarm">MasterRightArm</h3>
+
+<h4 id="masterrightarm-get_control_mode">get_control_mode</h4>
+
+```python
+def get_control_mode(timeout) -> ManipulatorControlModeParam
+```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)
+
+---
+
+<h4 id="masterrightarm-set_control_mode">set_control_mode</h4>
+
+```python
+def set_control_mode(manipulator_control_mode_param: ManipulatorControlModeParam, timeout) -> ExecutionResult
+```
+
+**Parameters:**
+
+* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam))
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterrightarm-get_joint_states">get_joint_states</h4>
+
+```python
+def get_joint_states(timeout) -> _sensor_msgs__.JointState
+```
+
+Get joint states
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h4 id="masterrightarm-get_end_pose">get_end_pose</h4>
+
+```python
+def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
+```
+
+Get End Pose
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`PoseStamped`](#message-geometry_msgsposestamped)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `pose` ([`Pose`](#message-geometry_msgspose))
+
+---
+
+<h4 id="masterrightarm-get_gripper_position">get_gripper_position</h4>
+
+```python
+def get_gripper_position(timeout) -> GripperPosition
+```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`GripperPosition`](#message-xrsdkgripperposition)
+
+---
 
 <h4 id="masterrightarm-get_joint_states_stream">get_joint_states_stream</h4>
 
@@ -1393,11 +1659,66 @@ Get End Pose stream
 
 ---
 
+<h4 id="masterrightarm-get_gripper_state_stream">get_gripper_state_stream</h4>
+
+```python
+def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
+```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: Stream of GripperPosition
+
+---
+
+<h4 id="masterrightarm-set_joint_positions">set_joint_positions</h4>
+
+```python
+def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
+```
+
+**Parameters:**
+
+* `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterrightarm-set_end_pose">set_end_pose</h4>
+
+```python
+def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
+```
+
+Control end effector pose (must set END_POSE mode first)
+position: [x, y, z] in meters, range: [-5.0, 5.0]
+orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+
+**Parameters:**
+
+* `position` ([`Point`](#message-geometry_msgspoint))
+* `orientation` ([`Quaternion`](#message-geometry_msgsquaternion))
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
 <h4 id="masterrightarm-get_gripper_joint_states_stream">get_gripper_joint_states_stream</h4>
 
 ```python
 def get_gripper_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
+
+Backward compatibility for old API shape.
 
 **Parameters:**
 
@@ -1473,14 +1794,14 @@ Set navigation mode (enable/disable built-in navigation algorithm)
 <h4 id="navigation-start_localization">start_localization</h4>
 
 ```python
-def start_localization(save_map_param: SaveMapParam, timeout) -> ExecutionResult
+def start_localization(start_localization_param: StartLocalizationParam, timeout) -> ExecutionResult
 ```
 
 Start localization
 
 **Parameters:**
 
-* `save_map_param` ([`SaveMapParam`](#message-xrsdksavemapparam))
+* `start_localization_param` ([`StartLocalizationParam`](#message-xrsdkstartlocalizationparam))
 
 **Returns:**
 
@@ -1503,6 +1824,60 @@ Stop localization
 **Returns:**
 
 * [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="navigation-cancel_navigation">cancel_navigation</h4>
+
+```python
+def cancel_navigation(timeout) -> ExecutionResult
+```
+
+Cancel current navigation task
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="navigation-load_map">load_map</h4>
+
+```python
+def load_map(messages: Iterable[UploadRequest], timeout) -> ExecutionResult
+```
+
+Load a map package (tar.gz of a directory) into the robot.
+
+**Parameters:**
+
+* `upload_request` ([`UploadRequest`](#message-xrsdkuploadrequest))
+
+**Returns:**
+
+* `Iterator[[`ExecutionResult`](#message-xrsdkexecutionresult)]`: Stream of ExecutionResult
+
+---
+
+<h4 id="navigation-export_map">export_map</h4>
+
+```python
+def export_map(download_request: DownloadRequest, timeout) -> Iterator[DownloadResponse]
+```
+
+Export a map from the robot as a tar.gz stream of a directory.
+
+**Parameters:**
+
+* `download_request` ([`DownloadRequest`](#message-xrsdkdownloadrequest))
+
+**Returns:**
+
+* `Iterator[[`DownloadResponse`](#message-xrsdkdownloadresponse)]`: Stream of DownloadResponse
 
 ---
 
@@ -2075,6 +2450,24 @@ Get Robot runtime info
 **Returns:**
 
 * [`RobotDynamicInfo`](#message-xrsdkrobotdynamicinfo)
+
+---
+
+<h4 id="system-get_model_type">get_model_type</h4>
+
+```python
+def get_model_type(timeout) -> ModelTypeResult
+```
+
+Get robot model type (works on all models, does not depend on application node)
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`ModelTypeResult`](#message-xrsdkmodeltyperesult)
 
 ---
 
@@ -2763,6 +3156,40 @@ Get Robot runtime info
 
 ---
 
+<a id="message-xrsdkdownloadmeta"></a>
+#### DownloadMeta
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_size` | `uint64` |  |
+
+---
+
+<a id="message-xrsdkdownloadrequest"></a>
+#### DownloadRequest
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `identifier` | `string` |  |
+
+---
+
+<a id="message-xrsdkdownloadresponse"></a>
+#### DownloadResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `meta` | [`DownloadMeta`](#message-xrsdkdownloadmeta) |  |
+| `chunk` | `bytes` |  |
+
+---
+
 <a id="message-xrsdkexecutionresult"></a>
 #### ExecutionResult
 
@@ -2773,6 +3200,18 @@ Get Robot runtime info
 | `is_success` | `bool` |  |
 | `error_message` | `string` |  |
 | `error_code` | `ErrorCode` | Detailed error classification |
+
+---
+
+<a id="message-xrsdkfiletransfermeta"></a>
+#### FileTransferMeta
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `identifier` | `string` |  |
+| `total_size` | `uint64` |  |
 
 ---
 
@@ -2829,6 +3268,17 @@ Get Robot runtime info
 | Field | Type | Description |
 |-------|------|-------------|
 | `mode` | [`ManipulatorControlMode`](#enum-xrsdkmanipulatorcontrolmode) |  |
+
+---
+
+<a id="message-xrsdkmodeltyperesult"></a>
+#### ModelTypeResult
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `model_type` | [`RobotModelType`](#enum-xrsdkrobotmodeltype) |  |
 
 ---
 
@@ -2957,6 +3407,19 @@ Get Robot runtime info
 
 ---
 
+<a id="message-xrsdkstartlocalizationparam"></a>
+#### StartLocalizationParam
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `map_name` | `string` | Map name used for localization |
+| `use_init_pose` | `bool` | Whether to use initial pose for localization |
+| `init_pose` | [`Pose`](#message-geometry_msgspose) | Initial pose in map coordinate system, valid only when use_init_pose is true |
+
+---
+
 <a id="message-xrsdkstopaudioresponse"></a>
 #### StopAudioResponse
 
@@ -2984,6 +3447,18 @@ Get Robot runtime info
 | `directions` | List[`int32`] |  |
 | `capacitances` | List[`uint32`] |  |
 | `error_codes` | List[`uint32`] |  |
+
+---
+
+<a id="message-xrsdkuploadrequest"></a>
+#### UploadRequest
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `meta` | [`FileTransferMeta`](#message-xrsdkfiletransfermeta) |  |
+| `chunk` | `bytes` |  |
 
 ---
 
@@ -3058,6 +3533,7 @@ map coordinate system is used for map based navigation. need to set this mode be
 | `CX002` (1) |  |
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
+| `EX001_MASTER` (4) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

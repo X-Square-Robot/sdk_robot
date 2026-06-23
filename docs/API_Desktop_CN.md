@@ -21,6 +21,30 @@
    * [get_position](#leftgrippercontroller-get_position)
    * [get_position_stream](#leftgrippercontroller-get_position_stream)
    * [get_joint_states_stream](#leftgrippercontroller-get_joint_states_stream)
+* [MasterLeftArm](#masterleftarm)
+   * [get_control_mode](#masterleftarm-get_control_mode)
+   * [set_control_mode](#masterleftarm-set_control_mode)
+   * [get_joint_states](#masterleftarm-get_joint_states)
+   * [get_end_pose](#masterleftarm-get_end_pose)
+   * [get_gripper_position](#masterleftarm-get_gripper_position)
+   * [get_joint_states_stream](#masterleftarm-get_joint_states_stream)
+   * [get_end_pose_stream](#masterleftarm-get_end_pose_stream)
+   * [get_gripper_state_stream](#masterleftarm-get_gripper_state_stream)
+   * [set_joint_positions](#masterleftarm-set_joint_positions)
+   * [set_end_pose](#masterleftarm-set_end_pose)
+   * [get_gripper_joint_states_stream](#masterleftarm-get_gripper_joint_states_stream)
+* [MasterRightArm](#masterrightarm)
+   * [get_control_mode](#masterrightarm-get_control_mode)
+   * [set_control_mode](#masterrightarm-set_control_mode)
+   * [get_joint_states](#masterrightarm-get_joint_states)
+   * [get_end_pose](#masterrightarm-get_end_pose)
+   * [get_gripper_position](#masterrightarm-get_gripper_position)
+   * [get_joint_states_stream](#masterrightarm-get_joint_states_stream)
+   * [get_end_pose_stream](#masterrightarm-get_end_pose_stream)
+   * [get_gripper_state_stream](#masterrightarm-get_gripper_state_stream)
+   * [set_joint_positions](#masterrightarm-set_joint_positions)
+   * [set_end_pose](#masterrightarm-set_end_pose)
+   * [get_gripper_joint_states_stream](#masterrightarm-get_gripper_joint_states_stream)
 * [RightArmController](#rightarmcontroller)
    * [set_joint_positions](#rightarmcontroller-set_joint_positions)
    * [set_end_pose](#rightarmcontroller-set_end_pose)
@@ -42,6 +66,7 @@
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
    * [get_dynamic_info](#system-get_dynamic_info)
+   * [get_model_type](#system-get_model_type)
 
 ### 消息类型列表
 
@@ -59,10 +84,15 @@
 * [AudioData](#message-xrsdkaudiodata)
 * [AudioDataStamped](#message-xrsdkaudiodatastamped)
 * [AudioInfo](#message-xrsdkaudioinfo)
+* [DownloadMeta](#message-xrsdkdownloadmeta)
+* [DownloadRequest](#message-xrsdkdownloadrequest)
+* [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
+* [FileTransferMeta](#message-xrsdkfiletransfermeta)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [JointPositions](#message-xrsdkjointpositions)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
+* [ModelTypeResult](#message-xrsdkmodeltyperesult)
 * [PingRequest](#message-xrsdkpingrequest)
 * [PlayAudioResponse](#message-xrsdkplayaudioresponse)
 * [PongResponse](#message-xrsdkpongresponse)
@@ -71,7 +101,9 @@
 * [RobotModeParam](#message-xrsdkrobotmodeparam)
 * [RobotRuntimeInfo](#message-xrsdkrobotruntimeinfo)
 * [RobotStaticInfo](#message-xrsdkrobotstaticinfo)
+* [StartLocalizationParam](#message-xrsdkstartlocalizationparam)
 * [StopAudioResponse](#message-xrsdkstopaudioresponse)
+* [UploadRequest](#message-xrsdkuploadrequest)
 
 ### 枚举类型列表
 
@@ -401,6 +433,432 @@ def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 ```
 
 获取关节状态流
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` (`Header`)
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h3 id="masterleftarm">MasterLeftArm</h3>
+
+============================================================================
+
+<h4 id="masterleftarm-get_control_mode">get_control_mode</h4>
+
+```python
+def get_control_mode(timeout) -> ManipulatorControlModeParam
+```
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)
+
+---
+
+<h4 id="masterleftarm-set_control_mode">set_control_mode</h4>
+
+```python
+def set_control_mode(manipulator_control_mode_param: ManipulatorControlModeParam, timeout) -> ExecutionResult
+```
+
+**参数:**
+
+* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterleftarm-get_joint_states">get_joint_states</h4>
+
+```python
+def get_joint_states(timeout) -> _sensor_msgs__.JointState
+```
+
+获取关节状态
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` (`Header`)
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h4 id="masterleftarm-get_end_pose">get_end_pose</h4>
+
+```python
+def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
+```
+
+获取末端位姿
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`PoseStamped`](#message-geometry_msgsposestamped)
+   * `header` (`Header`)
+   * `pose` ([`Pose`](#message-geometry_msgspose))
+
+---
+
+<h4 id="masterleftarm-get_gripper_position">get_gripper_position</h4>
+
+```python
+def get_gripper_position(timeout) -> GripperPosition
+```
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`GripperPosition`](#message-xrsdkgripperposition)
+
+---
+
+<h4 id="masterleftarm-get_joint_states_stream">get_joint_states_stream</h4>
+
+```python
+def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
+```
+
+获取关节状态流
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` (`Header`)
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h4 id="masterleftarm-get_end_pose_stream">get_end_pose_stream</h4>
+
+```python
+def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
+```
+
+获取末端位姿流
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`PoseStamped`](#message-geometry_msgsposestamped)
+   * `header` (`Header`)
+   * `pose` ([`Pose`](#message-geometry_msgspose))
+
+---
+
+<h4 id="masterleftarm-get_gripper_state_stream">get_gripper_state_stream</h4>
+
+```python
+def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
+```
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: GripperPosition 流
+
+---
+
+<h4 id="masterleftarm-set_joint_positions">set_joint_positions</h4>
+
+```python
+def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
+```
+
+**参数:**
+
+* `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterleftarm-set_end_pose">set_end_pose</h4>
+
+```python
+def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
+```
+
+Control end effector pose (must set END_POSE mode first)
+position: [x, y, z] in meters, range: [-5.0, 5.0]
+orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+
+**参数:**
+
+* `position` ([`Point`](#message-geometry_msgspoint))
+* `orientation` ([`Quaternion`](#message-geometry_msgsquaternion))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterleftarm-get_gripper_joint_states_stream">get_gripper_joint_states_stream</h4>
+
+```python
+def get_gripper_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
+```
+
+Backward compatibility for old API shape.
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` (`Header`)
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h3 id="masterrightarm">MasterRightArm</h3>
+
+<h4 id="masterrightarm-get_control_mode">get_control_mode</h4>
+
+```python
+def get_control_mode(timeout) -> ManipulatorControlModeParam
+```
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam)
+
+---
+
+<h4 id="masterrightarm-set_control_mode">set_control_mode</h4>
+
+```python
+def set_control_mode(manipulator_control_mode_param: ManipulatorControlModeParam, timeout) -> ExecutionResult
+```
+
+**参数:**
+
+* `manipulator_control_mode_param` ([`ManipulatorControlModeParam`](#message-xrsdkmanipulatorcontrolmodeparam))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterrightarm-get_joint_states">get_joint_states</h4>
+
+```python
+def get_joint_states(timeout) -> _sensor_msgs__.JointState
+```
+
+获取关节状态
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` (`Header`)
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h4 id="masterrightarm-get_end_pose">get_end_pose</h4>
+
+```python
+def get_end_pose(timeout) -> _geometry_msgs__.PoseStamped
+```
+
+获取末端位姿
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`PoseStamped`](#message-geometry_msgsposestamped)
+   * `header` (`Header`)
+   * `pose` ([`Pose`](#message-geometry_msgspose))
+
+---
+
+<h4 id="masterrightarm-get_gripper_position">get_gripper_position</h4>
+
+```python
+def get_gripper_position(timeout) -> GripperPosition
+```
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`GripperPosition`](#message-xrsdkgripperposition)
+
+---
+
+<h4 id="masterrightarm-get_joint_states_stream">get_joint_states_stream</h4>
+
+```python
+def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
+```
+
+获取关节状态流
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`JointState`](#message-sensor_msgsjointstate)
+   * `header` (`Header`)
+   * `name` (List[`string`])
+   * `position` (List[`double`])
+   * `velocity` (List[`double`])
+   * `effort` (List[`double`])
+
+---
+
+<h4 id="masterrightarm-get_end_pose_stream">get_end_pose_stream</h4>
+
+```python
+def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
+```
+
+获取末端位姿流
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`PoseStamped`](#message-geometry_msgsposestamped)
+   * `header` (`Header`)
+   * `pose` ([`Pose`](#message-geometry_msgspose))
+
+---
+
+<h4 id="masterrightarm-get_gripper_state_stream">get_gripper_state_stream</h4>
+
+```python
+def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
+```
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* `Iterator[[`GripperPosition`](#message-xrsdkgripperposition)]`: GripperPosition 流
+
+---
+
+<h4 id="masterrightarm-set_joint_positions">set_joint_positions</h4>
+
+```python
+def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
+```
+
+**参数:**
+
+* `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterrightarm-set_end_pose">set_end_pose</h4>
+
+```python
+def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionResult
+```
+
+Control end effector pose (must set END_POSE mode first)
+position: [x, y, z] in meters, range: [-5.0, 5.0]
+orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+
+**参数:**
+
+* `position` ([`Point`](#message-geometry_msgspoint))
+* `orientation` ([`Quaternion`](#message-geometry_msgsquaternion))
+
+**返回:**
+
+* [`ExecutionResult`](#message-xrsdkexecutionresult)
+
+---
+
+<h4 id="masterrightarm-get_gripper_joint_states_stream">get_gripper_joint_states_stream</h4>
+
+```python
+def get_gripper_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
+```
+
+Backward compatibility for old API shape.
 
 **参数:**
 
@@ -799,6 +1257,24 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 ---
 
+<h4 id="system-get_model_type">get_model_type</h4>
+
+```python
+def get_model_type(timeout) -> ModelTypeResult
+```
+
+Get robot model type (works on all models, does not depend on application node)
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`ModelTypeResult`](#message-xrsdkmodeltyperesult)
+
+---
+
 ## 类型
 
 ### 消息类型
@@ -982,6 +1458,40 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 ---
 
+<a id="message-xrsdkdownloadmeta"></a>
+#### DownloadMeta
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `total_size` | `uint64` |  |
+
+---
+
+<a id="message-xrsdkdownloadrequest"></a>
+#### DownloadRequest
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `identifier` | `string` |  |
+
+---
+
+<a id="message-xrsdkdownloadresponse"></a>
+#### DownloadResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `meta` | [`DownloadMeta`](#message-xrsdkdownloadmeta) |  |
+| `chunk` | `bytes` |  |
+
+---
+
 <a id="message-xrsdkexecutionresult"></a>
 #### ExecutionResult
 
@@ -992,6 +1502,18 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 | `is_success` | `bool` |  |
 | `error_message` | `string` |  |
 | `error_code` | `ErrorCode` | 详细错误分类 |
+
+---
+
+<a id="message-xrsdkfiletransfermeta"></a>
+#### FileTransferMeta
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `identifier` | `string` |  |
+| `total_size` | `uint64` |  |
 
 ---
 
@@ -1025,6 +1547,17 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 | 字段 | 类型 | 说明 |
 |------|------|--------|
 | `mode` | `ManipulatorControlMode` |  |
+
+---
+
+<a id="message-xrsdkmodeltyperesult"></a>
+#### ModelTypeResult
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `model_type` | [`RobotModelType`](#enum-xrsdkrobotmodeltype) |  |
 
 ---
 
@@ -1131,6 +1664,19 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 
 ---
 
+<a id="message-xrsdkstartlocalizationparam"></a>
+#### StartLocalizationParam
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `map_name` | `string` | 用于定位的地图名称 |
+| `use_init_pose` | `bool` | 是否使用初始位姿进行定位 |
+| `init_pose` | [`Pose`](#message-geometry_msgspose) | 地图坐标系下的初始位姿，仅在 use_init_pose 为 true 时生效 |
+
+---
+
 <a id="message-xrsdkstopaudioresponse"></a>
 #### StopAudioResponse
 
@@ -1140,6 +1686,18 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 |------|------|--------|
 | `success` | `bool` |  |
 | `message` | `string` |  |
+
+---
+
+<a id="message-xrsdkuploadrequest"></a>
+#### UploadRequest
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `meta` | [`FileTransferMeta`](#message-xrsdkfiletransfermeta) |  |
+| `chunk` | `bytes` |  |
 
 ---
 
@@ -1154,6 +1712,7 @@ def get_dynamic_info(timeout) -> RobotDynamicInfo
 | `CX002` (1) |  |
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
+| `EX001_MASTER` (4) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---
