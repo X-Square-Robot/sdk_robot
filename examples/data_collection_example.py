@@ -56,6 +56,8 @@ def create_collection_config_for_quanta_x2() -> CollectionConfig:
     collection_config.slave_joint_names = [
         'left_arm_joint_states',
         'right_arm_joint_states',
+        'left_gripper_joint_states',
+        'right_gripper_joint_states',
         'waist_joint_states',
         'head_joint_states'
     ]
@@ -65,8 +67,8 @@ def create_collection_config_for_quanta_x2() -> CollectionConfig:
     collection_config.enable_right_arm_rgb_stream = True # Collect right arm RGB video stream
     collection_config.enable_left_arm_end_pose = True # Collect left arm end pose
     collection_config.enable_right_arm_end_pose = True # Collect right arm end pose
-    collection_config.enable_left_gripper_position = True # Collect left gripper position
-    collection_config.enable_right_gripper_position = True # Collect right gripper position
+    # collection_config.enable_left_gripper_position = True # Collect left gripper position
+    # collection_config.enable_right_gripper_position = True # Collect right gripper position
     collection_config.enable_odometry = True # Collect odometry data
 
     collection_config.enable_waist_end_pose = True # Collect waist end pose
