@@ -62,6 +62,8 @@
    * [get_position](#rightgrippercontroller-get_position)
    * [get_position_stream](#rightgrippercontroller-get_position_stream)
    * [get_joint_states_stream](#rightgrippercontroller-get_joint_states_stream)
+* [RobotStatus](#robotstatus)
+   * [get_robot_status](#robotstatus-get_robot_status)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
@@ -76,11 +78,14 @@
 * [PoseStamped](#message-geometry_msgsposestamped)
 * [PoseWithCovariance](#message-geometry_msgsposewithcovariance)
 * [Quaternion](#message-geometry_msgsquaternion)
+* [Transform](#message-geometry_msgstransform)
+* [TransformStamped](#message-geometry_msgstransformstamped)
 * [Vector3](#message-geometry_msgsvector3)
 * [Wrench](#message-geometry_msgswrench)
 * [WrenchStamped](#message-geometry_msgswrenchstamped)
 * [CompressedImage](#message-sensor_msgscompressedimage)
 * [JointState](#message-sensor_msgsjointstate)
+* [TFMessage](#message-tf2_msgstfmessage)
 * [AudioData](#message-xrsdkaudiodata)
 * [AudioDataStamped](#message-xrsdkaudiodatastamped)
 * [AudioInfo](#message-xrsdkaudioinfo)
@@ -89,6 +94,9 @@
 * [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
 * [FileTransferMeta](#message-xrsdkfiletransfermeta)
+* [GetMapListResponse](#message-xrsdkgetmaplistresponse)
+* [GetRobotStatusReply](#message-xrsdkgetrobotstatusreply)
+* [GetRobotStatusRequest](#message-xrsdkgetrobotstatusrequest)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [JointPositions](#message-xrsdkjointpositions)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
@@ -157,13 +165,13 @@ Control end effector pose (must set END_POSE mode first)
 
 For Quanta_X2
 
-* `upper limit: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `lower limit: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `upper limit: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `lower limit: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 For Quanta_X1 and Desktop
 
-* `upper limit: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `lower limit: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `upper limit: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `lower limit: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 **Parameters:**
 
@@ -609,6 +617,8 @@ def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
 def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
 ```
 
+Placeholder methods, backend is not supported yet.
+
 **Parameters:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
@@ -627,7 +637,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 Control end effector pose (must set END_POSE mode first)
 position: [x, y, z] in meters, range: [-5.0, 5.0]
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **Parameters:**
 
@@ -821,6 +831,8 @@ def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
 def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
 ```
 
+Placeholder methods, backend is not supported yet.
+
 **Parameters:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
@@ -839,7 +851,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 Control end effector pose (must set END_POSE mode first)
 position: [x, y, z] in meters, range: [-5.0, 5.0]
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **Parameters:**
 
@@ -1201,6 +1213,29 @@ Get Joint state stream
 
 ---
 
+<h3 id="robotstatus">RobotStatus</h3>
+
+Real-time whole-robot status query service; client wraps JSON payload in SdkResult.
+
+<h4 id="robotstatus-get_robot_status">get_robot_status</h4>
+
+```python
+def get_robot_status(fields = None, request_id = None) -> SdkResult
+```
+
+Query the robot's real-time status.
+
+**Parameters:**
+
+* `fields` - Filter list. None or [] returns everything; supports two-level paths, e.g. ["energy"] (whole category) or ["energy.battery_level"] (single field).
+* `request_id` - Per-call trace id; auto-generated as uuid4 when omitted, echoed back in SdkResult.request_id for log correlation.
+
+**Returns:**
+
+* `SdkResult`: on success, `data` is a status dict (energy/motion/execution/safety/health); on failure, `error` is a standard ErrorCode
+
+---
+
 <h3 id="system">System</h3>
 
 <h4 id="system-set_work_mode">set_work_mode</h4>
@@ -1354,6 +1389,31 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-geometry_msgstransform"></a>
+#### Transform
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `translation` | [`Vector3`](#message-geometry_msgsvector3) |  |
+| `rotation` | [`Quaternion`](#message-geometry_msgsquaternion) |  |
+
+---
+
+<a id="message-geometry_msgstransformstamped"></a>
+#### TransformStamped
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `header` | `Header` |  |
+| `child_frame_id` | `string` |  |
+| `transform` | [`Transform`](#message-geometry_msgstransform) |  |
+
+---
+
 <a id="message-geometry_msgsvector3"></a>
 #### Vector3
 
@@ -1416,6 +1476,17 @@ Get robot model type (works on all models, does not depend on application node)
 | `position` | List[`double`] |  |
 | `velocity` | List[`double`] |  |
 | `effort` | List[`double`] |  |
+
+---
+
+<a id="message-tf2_msgstfmessage"></a>
+#### TFMessage
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `transforms` | List[[`TransformStamped`](#message-geometry_msgstransformstamped)] |  |
 
 ---
 
@@ -1517,6 +1588,40 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-xrsdkgetmaplistresponse"></a>
+#### GetMapListResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `header` | [`ExecutionResult`](#message-xrsdkexecutionresult) | Call status: is_success / error_code / error_message |
+| `map_list` | List[`string`] | List of saved map names |
+
+---
+
+<a id="message-xrsdkgetrobotstatusreply"></a>
+#### GetRobotStatusReply
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `json` | `string` | Payload (JSON string) grouped into energy/motion/execution/safety/health.<br>Unavailable or uncaptured fields are null. |
+
+---
+
+<a id="message-xrsdkgetrobotstatusrequest"></a>
+#### GetRobotStatusRequest
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `fields` | List[`string`] | Filter field list:<br>empty -> all fields;<br>"energy" -> whole category;<br>"energy.battery_level" -> single field (two-level path). |
+
+---
+
 <a id="message-xrsdkgripperposition"></a>
 #### GripperPosition
 
@@ -1524,6 +1629,7 @@ Get robot model type (works on all models, does not depend on application node)
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `header` | `Header` |  |
 | `position` | `float` |  |
 
 ---
@@ -1713,6 +1819,7 @@ Get robot model type (works on all models, does not depend on application node)
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
 | `EX001_MASTER` (4) |  |
+| `EX002` (5) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

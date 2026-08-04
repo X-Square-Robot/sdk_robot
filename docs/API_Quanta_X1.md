@@ -33,6 +33,10 @@
    * [get_depth_image](#headcamera-get_depth_image)
    * [get_rgb_video_stream](#headcamera-get_rgb_video_stream)
    * [get_depth_video_stream](#headcamera-get_depth_video_stream)
+   * [get_left_eye_image](#headcamera-get_left_eye_image)
+   * [get_right_eye_image](#headcamera-get_right_eye_image)
+   * [get_left_eye_video_stream](#headcamera-get_left_eye_video_stream)
+   * [get_right_eye_video_stream](#headcamera-get_right_eye_video_stream)
 * [HeadController](#headcontroller)
    * [set_pose](#headcontroller-set_pose)
    * [get_pose](#headcontroller-get_pose)
@@ -44,6 +48,8 @@
 * [LeftArmCamera](#leftarmcamera)
    * [get_raw_image](#leftarmcamera-get_raw_image)
    * [get_video_stream](#leftarmcamera-get_video_stream)
+   * [get_elbow_image](#leftarmcamera-get_elbow_image)
+   * [get_elbow_video_stream](#leftarmcamera-get_elbow_video_stream)
 * [LeftArmController](#leftarmcontroller)
    * [set_joint_positions](#leftarmcontroller-set_joint_positions)
    * [set_end_pose](#leftarmcontroller-set_end_pose)
@@ -98,12 +104,15 @@
    * [cancel_navigation](#navigation-cancel_navigation)
    * [load_map](#navigation-load_map)
    * [export_map](#navigation-export_map)
+   * [get_map_list](#navigation-get_map_list)
 * [RadarService](#radarservice)
    * [get_laser_scan](#radarservice-get_laser_scan)
    * [get_laser_scan_stream](#radarservice-get_laser_scan_stream)
 * [RightArmCamera](#rightarmcamera)
    * [get_raw_image](#rightarmcamera-get_raw_image)
    * [get_video_stream](#rightarmcamera-get_video_stream)
+   * [get_elbow_image](#rightarmcamera-get_elbow_image)
+   * [get_elbow_video_stream](#rightarmcamera-get_elbow_video_stream)
 * [RightArmController](#rightarmcontroller)
    * [set_joint_positions](#rightarmcontroller-set_joint_positions)
    * [set_end_pose](#rightarmcontroller-set_end_pose)
@@ -127,6 +136,8 @@
    * [homing](#robotcontrol-homing)
    * [emergency_stop](#robotcontrol-emergency_stop)
    * [recover_emergency_stop](#robotcontrol-recover_emergency_stop)
+* [RobotStatus](#robotstatus)
+   * [get_robot_status](#robotstatus-get_robot_status)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
@@ -155,6 +166,8 @@
 * [PoseStamped](#message-geometry_msgsposestamped)
 * [PoseWithCovariance](#message-geometry_msgsposewithcovariance)
 * [Quaternion](#message-geometry_msgsquaternion)
+* [Transform](#message-geometry_msgstransform)
+* [TransformStamped](#message-geometry_msgstransformstamped)
 * [Twist](#message-geometry_msgstwist)
 * [TwistWithCovariance](#message-geometry_msgstwistwithcovariance)
 * [Vector3](#message-geometry_msgsvector3)
@@ -175,6 +188,7 @@
 * [MultiArrayDimension](#message-std_msgsmultiarraydimension)
 * [MultiArrayLayout](#message-std_msgsmultiarraylayout)
 * [String](#message-std_msgsstring)
+* [TFMessage](#message-tf2_msgstfmessage)
 * [AudioData](#message-xrsdkaudiodata)
 * [AudioDataStamped](#message-xrsdkaudiodatastamped)
 * [AudioInfo](#message-xrsdkaudioinfo)
@@ -188,6 +202,9 @@
 * [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
 * [FileTransferMeta](#message-xrsdkfiletransfermeta)
+* [GetMapListResponse](#message-xrsdkgetmaplistresponse)
+* [GetRobotStatusReply](#message-xrsdkgetrobotstatusreply)
+* [GetRobotStatusRequest](#message-xrsdkgetrobotstatusrequest)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [HeadPose](#message-xrsdkheadpose)
 * [JointPositions](#message-xrsdkjointpositions)
@@ -393,6 +410,8 @@ def set_velocity(chassis_velocity: ChassisVelocity, timeout) -> ExecutionResult
 ```
 
 Set velocity control (must set VELOCITY mode first)
+
+> **Note:** While the robot is charging, calling this API cannot move the robot.
 
 **Parameters:**
 
@@ -652,11 +671,15 @@ def get_chassis_depth_points_stream(timeout) -> Iterator[_sensor_msgs__.PointClo
 
 <h3 id="headcamera">HeadCamera</h3>
 
+HeadCamera 头部相机
+
 <h4 id="headcamera-get_rgb_image">get_rgb_image</h4>
 
 ```python
 def get_rgb_image(timeout) -> _sensor_msgs__.CompressedImage
 ```
+
+单目相机构型：头部 RGB 图像
 
 **Parameters:**
 
@@ -677,6 +700,8 @@ def get_rgb_image(timeout) -> _sensor_msgs__.CompressedImage
 def get_depth_image(timeout) -> _sensor_msgs__.CompressedImage
 ```
 
+单目相机构型：头部深度图像
+
 **Parameters:**
 
 * No parameters
@@ -696,6 +721,8 @@ def get_depth_image(timeout) -> _sensor_msgs__.CompressedImage
 def get_rgb_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```
 
+单目相机构型：头部 RGB 视频流
+
 **Parameters:**
 
 * No parameters
@@ -714,6 +741,92 @@ def get_rgb_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```python
 def get_depth_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```
+
+单目相机构型：头部深度视频流
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="headcamera-get_left_eye_image">get_left_eye_image</h4>
+
+```python
+def get_left_eye_image(timeout) -> _sensor_msgs__.CompressedImage
+```
+
+双目相机构型：左眼图像
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="headcamera-get_right_eye_image">get_right_eye_image</h4>
+
+```python
+def get_right_eye_image(timeout) -> _sensor_msgs__.CompressedImage
+```
+
+双目相机构型：右眼图像
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="headcamera-get_left_eye_video_stream">get_left_eye_video_stream</h4>
+
+```python
+def get_left_eye_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
+```
+
+双目相机构型：左眼视频流
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="headcamera-get_right_eye_video_stream">get_right_eye_video_stream</h4>
+
+```python
+def get_right_eye_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
+```
+
+双目相机构型：右眼视频流
 
 **Parameters:**
 
@@ -871,6 +984,8 @@ def get_chassis_imu_stream(timeout) -> Iterator[_sensor_msgs__.Imu]
 
 <h3 id="leftarmcamera">LeftArmCamera</h3>
 
+LeftArmCamera 左臂相机
+
 <h4 id="leftarmcamera-get_raw_image">get_raw_image</h4>
 
 ```python
@@ -895,6 +1010,48 @@ def get_raw_image(timeout) -> _sensor_msgs__.CompressedImage
 ```python
 def get_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="leftarmcamera-get_elbow_image">get_elbow_image</h4>
+
+```python
+def get_elbow_image(timeout) -> _sensor_msgs__.CompressedImage
+```
+
+双目相机构型：左肘相机图像
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="leftarmcamera-get_elbow_video_stream">get_elbow_video_stream</h4>
+
+```python
+def get_elbow_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
+```
+
+双目相机构型：左肘相机视频流
 
 **Parameters:**
 
@@ -951,13 +1108,13 @@ Control end effector pose (must set END_POSE mode first)
 
 For Quanta_X2
 
-* `upper limit: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `lower limit: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `upper limit: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `lower limit: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 For Quanta_X1 and Desktop
 
-* `upper limit: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `lower limit: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `upper limit: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `lower limit: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 **Parameters:**
 
@@ -1469,6 +1626,8 @@ def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
 def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
 ```
 
+Placeholder methods, backend is not supported yet.
+
 **Parameters:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
@@ -1487,7 +1646,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 Control end effector pose (must set END_POSE mode first)
 position: [x, y, z] in meters, range: [-5.0, 5.0]
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **Parameters:**
 
@@ -1681,6 +1840,8 @@ def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
 def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
 ```
 
+Placeholder methods, backend is not supported yet.
+
 **Parameters:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
@@ -1699,7 +1860,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 Control end effector pose (must set END_POSE mode first)
 position: [x, y, z] in meters, range: [-5.0, 5.0]
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **Parameters:**
 
@@ -1881,6 +2042,24 @@ Export a map from the robot as a tar.gz stream of a directory.
 
 ---
 
+<h4 id="navigation-get_map_list">get_map_list</h4>
+
+```python
+def get_map_list(timeout) -> GetMapListResponse
+```
+
+Get the list of saved map names
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`GetMapListResponse`](#message-xrsdkgetmaplistresponse)
+
+---
+
 <h3 id="radarservice">RadarService</h3>
 
 Radar service
@@ -1941,6 +2120,8 @@ def get_laser_scan_stream(timeout) -> Iterator[_sensor_msgs__.LaserScan]
 
 <h3 id="rightarmcamera">RightArmCamera</h3>
 
+RightArmCamera 右臂相机（语义同 LeftArmCamera）
+
 <h4 id="rightarmcamera-get_raw_image">get_raw_image</h4>
 
 ```python
@@ -1965,6 +2146,48 @@ def get_raw_image(timeout) -> _sensor_msgs__.CompressedImage
 ```python
 def get_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="rightarmcamera-get_elbow_image">get_elbow_image</h4>
+
+```python
+def get_elbow_image(timeout) -> _sensor_msgs__.CompressedImage
+```
+
+双目相机构型：右肘相机图像
+
+**Parameters:**
+
+* No parameters
+
+**Returns:**
+
+* [`CompressedImage`](#message-sensor_msgscompressedimage)
+   * `header` ([`Header`](#message-std_msgsheader))
+   * `format` (`string`)
+   * `data` (`bytes`)
+
+---
+
+<h4 id="rightarmcamera-get_elbow_video_stream">get_elbow_video_stream</h4>
+
+```python
+def get_elbow_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
+```
+
+双目相机构型：右肘相机视频流
 
 **Parameters:**
 
@@ -2397,6 +2620,29 @@ Recover from emergency stop, only when emergency stop is called
 
 ---
 
+<h3 id="robotstatus">RobotStatus</h3>
+
+Real-time whole-robot status query service; client wraps JSON payload in SdkResult.
+
+<h4 id="robotstatus-get_robot_status">get_robot_status</h4>
+
+```python
+def get_robot_status(fields = None, request_id = None) -> SdkResult
+```
+
+Query the robot's real-time status.
+
+**Parameters:**
+
+* `fields` - Filter list. None or [] returns everything; supports two-level paths, e.g. ["energy"] (whole category) or ["energy.battery_level"] (single field).
+* `request_id` - Per-call trace id; auto-generated as uuid4 when omitted, echoed back in SdkResult.request_id for log correlation.
+
+**Returns:**
+
+* `SdkResult`: on success, `data` is a status dict (energy/motion/execution/safety/health); on failure, `error` is a standard ErrorCode
+
+---
+
 <h3 id="system">System</h3>
 
 <h4 id="system-set_work_mode">set_work_mode</h4>
@@ -2782,6 +3028,31 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-geometry_msgstransform"></a>
+#### Transform
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `translation` | [`Vector3`](#message-geometry_msgsvector3) |  |
+| `rotation` | [`Quaternion`](#message-geometry_msgsquaternion) |  |
+
+---
+
+<a id="message-geometry_msgstransformstamped"></a>
+#### TransformStamped
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `header` | [`Header`](#message-std_msgsheader) |  |
+| `child_frame_id` | `string` |  |
+| `transform` | [`Transform`](#message-geometry_msgstransform) |  |
+
+---
+
 <a id="message-geometry_msgstwist"></a>
 #### Twist
 
@@ -3057,6 +3328,17 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-tf2_msgstfmessage"></a>
+#### TFMessage
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `transforms` | List[[`TransformStamped`](#message-geometry_msgstransformstamped)] |  |
+
+---
+
 <a id="message-xrsdkaudiodata"></a>
 #### AudioData
 
@@ -3215,6 +3497,40 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-xrsdkgetmaplistresponse"></a>
+#### GetMapListResponse
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `header` | [`ExecutionResult`](#message-xrsdkexecutionresult) | Call status: is_success / error_code / error_message |
+| `map_list` | List[`string`] | List of saved map names |
+
+---
+
+<a id="message-xrsdkgetrobotstatusreply"></a>
+#### GetRobotStatusReply
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `json` | `string` | Payload (JSON string) grouped into energy/motion/execution/safety/health.<br>Unavailable or uncaptured fields are null. |
+
+---
+
+<a id="message-xrsdkgetrobotstatusrequest"></a>
+#### GetRobotStatusRequest
+
+**Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `fields` | List[`string`] | Filter field list:<br>empty -> all fields;<br>"energy" -> whole category;<br>"energy.battery_level" -> single field (two-level path). |
+
+---
+
 <a id="message-xrsdkgripperposition"></a>
 #### GripperPosition
 
@@ -3222,6 +3538,7 @@ Get robot model type (works on all models, does not depend on application node)
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `header` | [`Header`](#message-std_msgsheader) |  |
 | `position` | `float` |  |
 
 ---
@@ -3511,6 +3828,7 @@ map coordinate system is used for map based navigation. need to set this mode be
 |-------|-------------|
 | `MANIPULATOR_END_POSE` (0) | End pose control mode for manipulator(Arm and Waist) |
 | `MANIPULATOR_JOINT_POSITIONS` (1) | Joint positions control mode for manipulator(Arm and Waist) |
+| `MANIPULATOR_GRAVITY_COMPENSATION` (2) | Gravity compensation mode for MasterArm teleoperation takeover |
 
 ---
 
@@ -3534,6 +3852,7 @@ map coordinate system is used for map based navigation. need to set this mode be
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
 | `EX001_MASTER` (4) |  |
+| `EX002` (5) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

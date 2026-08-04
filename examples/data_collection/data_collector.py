@@ -46,7 +46,52 @@ from PIL import Image
 import cv2
 
 from x2robot import Robot
+from x2robot.utils import H26xStreamDecoder
 from .collection_config import CollectionConfig
+
+# H.26x/H.264/H.265 video packets cannot be decoded with PIL.Image.open or
+# cv2.imdecode (JPEG/PNG only); route them through the PyAV-based stream decoder.
+_VIDEO_CODEC_HINTS = ("h264", "h265", "h26x", "hevc", "avc")
+
+
+def _is_video_packet(image_format: Optional[str]) -> bool:
+    """Return True if the CompressedImage.format indicates an H.26x video packet."""
+    fmt = (image_format or "").lower()
+    return any(hint in fmt for hint in _VIDEO_CODEC_HINTS)
+
+
+# Internal stream name -> user-friendly camera name. Covers both the monocular
+# construction (head RGB/depth + arm RGB) and the binocular (双目) construction
+# (left/right eye + arm RGB + left/right elbow).
+_CAMERA_NAME_MAPPING = {
+    'head_rgb_stream': 'head_camera',
+    'head_depth_stream': 'head_depth_camera',
+    'left_arm_rgb_stream': 'left_arm_camera',
+    'right_arm_rgb_stream': 'right_arm_camera',
+    # Binocular (双目) construction cameras
+    'head_left_eye_stream': 'head_left_eye_camera',
+    'head_right_eye_stream': 'head_right_eye_camera',
+    'left_arm_elbow_stream': 'left_arm_elbow_camera',
+    'right_arm_elbow_stream': 'right_arm_elbow_camera',
+}
+
+# Suffixes of internal stream keys that carry image/video data (vs. sensor data).
+_IMAGE_STREAM_SUFFIXES = (
+    '_rgb_stream', '_depth_stream', '_depth_video', '_eye_stream', '_elbow_stream',
+)
+
+
+def _is_image_stream_key(key: str) -> bool:
+    """Return True if an internal data key refers to an image/video stream."""
+    return any(key.endswith(suffix) for suffix in _IMAGE_STREAM_SUFFIXES)
+
+
+# Preference order for choosing the master (baseline) camera whose timestamps
+# define the alignment grid. For the binocular construction there is no head
+# RGB camera, so the left/right eye act as the baseline instead.
+_MASTER_CAMERA_PRIORITY = (
+    'head_camera', 'head_left_eye_camera', 'head_right_eye_camera',
+)
 
 
 class DataCollector:
@@ -392,6 +437,19 @@ class DataCollector:
 
         if self.collection_config.enable_right_arm_rgb_stream:
             threads.append(threading.Thread(target=self._collect_right_arm_rgb_stream, daemon=True, name="RightArmRgbStreamCollector"))
+
+        # Binocular (双目) construction camera streams (H.26x encoded)
+        if self.collection_config.enable_head_left_eye_stream:
+            threads.append(threading.Thread(target=self._collect_head_left_eye_stream, daemon=True, name="HeadLeftEyeStreamCollector"))
+
+        if self.collection_config.enable_head_right_eye_stream:
+            threads.append(threading.Thread(target=self._collect_head_right_eye_stream, daemon=True, name="HeadRightEyeStreamCollector"))
+
+        if self.collection_config.enable_left_arm_elbow_stream:
+            threads.append(threading.Thread(target=self._collect_left_arm_elbow_stream, daemon=True, name="LeftArmElbowStreamCollector"))
+
+        if self.collection_config.enable_right_arm_elbow_stream:
+            threads.append(threading.Thread(target=self._collect_right_arm_elbow_stream, daemon=True, name="RightArmElbowStreamCollector"))
 
         # Sensor collection
         if self.collection_config.enable_chassis_imu:
@@ -781,11 +839,77 @@ class DataCollector:
         """Collect right arm RGB video stream"""
         print("Starting right arm RGB video stream...")
         self._collect_camera_stream('right_arm_rgb_stream', self.robot.right_arm_camera.get_video_stream)
-    
+
+    # ---- Binocular (双目) construction camera streams (H.26x encoded) ----
+
+    def _collect_head_left_eye_stream(self):
+        """Collect head left-eye video stream (binocular construction)"""
+        print("Starting head left-eye video stream...")
+        self._collect_camera_stream('head_left_eye_stream', self.robot.head_camera.get_left_eye_video_stream)
+
+    def _collect_head_right_eye_stream(self):
+        """Collect head right-eye video stream (binocular construction)"""
+        print("Starting head right-eye video stream...")
+        self._collect_camera_stream('head_right_eye_stream', self.robot.head_camera.get_right_eye_video_stream)
+
+    def _collect_left_arm_elbow_stream(self):
+        """Collect left arm elbow camera video stream (binocular construction)"""
+        print("Starting left arm elbow video stream...")
+        self._collect_camera_stream('left_arm_elbow_stream', self.robot.left_arm_camera.get_elbow_video_stream)
+
+    def _collect_right_arm_elbow_stream(self):
+        """Collect right arm elbow camera video stream (binocular construction)"""
+        print("Starting right arm elbow video stream...")
+        self._collect_camera_stream('right_arm_elbow_stream', self.robot.right_arm_camera.get_elbow_video_stream)
+
+    def _decode_camera_frame(self, frame_msg, decoder):
+        """Decode a CompressedImage into an RGB PIL.Image.
+
+        Handles both still-image formats (JPEG/PNG, via PIL) and H.26x video
+        packets (H.264/H.265, via the shared stream decoder). H.26x streams
+        need parameter sets (SPS/PPS/VPS) and a keyframe before any frame can
+        be produced, so ``decoder.feed`` returns ``None`` for the initial
+        packets; callers should skip frames until a decoded image is returned.
+
+        Args:
+            frame_msg: CompressedImage message.
+            decoder: per-stream H26xStreamDecoder (used only for video packets).
+
+        Returns:
+            An RGB PIL.Image, or None if no decodable frame is available yet.
+        """
+        img_bytes = bytes(frame_msg.data)
+        fmt = getattr(frame_msg, 'format', '') or ''
+
+        if _is_video_packet(fmt):
+            # H.26x packet -> BGR ndarray (OpenCV order); None until a frame is ready.
+            frame_bgr = decoder.feed(img_bytes, codec_hint=fmt)
+            if frame_bgr is None:
+                return None
+            # Convert BGR (OpenCV) -> RGB and wrap in a PIL Image so the rest of
+            # the storage/video pipeline (which expects RGB JPEG frames) is unchanged.
+            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            return Image.fromarray(frame_rgb)
+
+        # Still-image formats (JPEG/PNG)
+        img = Image.open(io.BytesIO(img_bytes))
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        return img
+
     def _collect_camera_stream(self, camera_name, stream_func):
-        """Collect video stream from a single camera"""
+        """Collect video stream from a single camera.
+
+        Supports both JPEG frames (monocular construction) and H.26x video
+        packets (binocular construction: left/right eye, left/right elbow).
+        Decoded frames are re-encoded to JPEG so downstream storage (image
+        files / ffmpeg video) is format-agnostic.
+        """
         print(f"Starting {camera_name} stream...")
-        
+
+        # Per-stream H.26x decoder (retains parameter sets / reference frames).
+        decoder = H26xStreamDecoder()
+
         try:
             stream = stream_func(timeout=None)
             
@@ -803,13 +927,11 @@ class DataCollector:
                     if not frame_msg or not frame_msg.data:
                         continue
 
-                    # Decode image - need to convert to bytes
-                    img_bytes = bytes(frame_msg.data)
-                    img = Image.open(io.BytesIO(img_bytes))
-
-                    # Convert to RGB
-                    if img.mode != 'RGB':
-                        img = img.convert('RGB')
+                    # Decode image (JPEG/PNG directly, H.26x via stream decoder).
+                    img = self._decode_camera_frame(frame_msg, decoder)
+                    # H.26x streams yield no frame until a keyframe arrives; skip.
+                    if img is None:
+                        continue
 
                     timestamp = self._extract_timestamp_from_header(frame_msg)
 
@@ -1398,6 +1520,15 @@ class DataCollector:
             enabled_cameras.append('left_arm_rgb_stream')
         if self.collection_config.enable_right_arm_rgb_stream:
             enabled_cameras.append('right_arm_rgb_stream')
+        # Binocular (双目) construction cameras
+        if self.collection_config.enable_head_left_eye_stream:
+            enabled_cameras.append('head_left_eye_stream')
+        if self.collection_config.enable_head_right_eye_stream:
+            enabled_cameras.append('head_right_eye_stream')
+        if self.collection_config.enable_left_arm_elbow_stream:
+            enabled_cameras.append('left_arm_elbow_stream')
+        if self.collection_config.enable_right_arm_elbow_stream:
+            enabled_cameras.append('right_arm_elbow_stream')
         return enabled_cameras
     
     def _monitor_camera_data(self):
@@ -1763,6 +1894,8 @@ class DataCollector:
                 if isinstance(count, int) and count > 0:
                     sensor_name = stat_key.replace('_count', '')
                     if sensor_name in ['head_camera', 'left_arm_camera', 'right_arm_camera',
+                                       'head_left_eye_camera', 'head_right_eye_camera',
+                                       'left_arm_elbow_camera', 'right_arm_elbow_camera',
                                        'head_depth_video', 'head_rgb_video']:
                         print(f"{sensor_name}: {count} frame")
                     else:
@@ -1823,6 +1956,16 @@ class DataCollector:
             mapping['enable_left_arm_rgb_stream'] = ['left_arm_rgb_stream']
         if self.collection_config.enable_right_arm_rgb_stream:
             mapping['enable_right_arm_rgb_stream'] = ['right_arm_rgb_stream']
+
+        # Binocular (双目) construction camera streams
+        if self.collection_config.enable_head_left_eye_stream:
+            mapping['enable_head_left_eye_stream'] = ['head_left_eye_stream']
+        if self.collection_config.enable_head_right_eye_stream:
+            mapping['enable_head_right_eye_stream'] = ['head_right_eye_stream']
+        if self.collection_config.enable_left_arm_elbow_stream:
+            mapping['enable_left_arm_elbow_stream'] = ['left_arm_elbow_stream']
+        if self.collection_config.enable_right_arm_elbow_stream:
+            mapping['enable_right_arm_elbow_stream'] = ['right_arm_elbow_stream']
         
         # Sensor collection
         if self.collection_config.enable_left_arm_end_pose:
@@ -1912,12 +2055,7 @@ class DataCollector:
         master_arm_missing_items = []
         
         # Camera name mapping: internal stream name -> user-friendly name
-        camera_name_mapping = {
-            'head_rgb_stream': 'head_camera',
-            'head_depth_stream': 'head_depth_camera',
-            'left_arm_rgb_stream': 'left_arm_camera',
-            'right_arm_rgb_stream': 'right_arm_camera'
-        }
+        camera_name_mapping = _CAMERA_NAME_MAPPING
         
         for config_name, data_keys in enabled_mapping.items():
             # Check the master arm data (only warning, not required, exclude action data)
@@ -1938,8 +2076,7 @@ class DataCollector:
                 continue
             
             # Check image data
-            if any(key.endswith('_rgb_stream') or key.endswith('_depth_stream') or key.endswith('_depth_video') 
-                   for key in data_keys):
+            if any(_is_image_stream_key(key) for key in data_keys):
                 # Image data in images dictionary (using original internal key names)
                 for internal_key in data_keys:
                     if internal_key in images:
@@ -2007,12 +2144,7 @@ class DataCollector:
         missing_data_items = []
         
         # Camera name mapping: internal stream name -> user-friendly name
-        camera_name_mapping = episode_data.get('camera_name_mapping', {
-            'head_rgb_stream': 'head_camera',
-            'head_depth_stream': 'head_depth_camera',
-            'left_arm_rgb_stream': 'left_arm_camera',
-            'right_arm_rgb_stream': 'right_arm_camera'
-        })
+        camera_name_mapping = episode_data.get('camera_name_mapping', _CAMERA_NAME_MAPPING)
         
         # For recording the missing cases of master arm data (only warning, not error)
         master_arm_missing_items = []
@@ -2021,8 +2153,7 @@ class DataCollector:
             # Check the master arm data (only warning, not required)
             if config_name == 'enable_master_arm_data':
                 # Check image data
-                if any(key.endswith('_rgb_stream') or key.endswith('_depth_stream') or key.endswith('_depth_video') 
-                       for key in data_keys):
+                if any(_is_image_stream_key(key) for key in data_keys):
                     # Image data in images dictionary (using mapped friendly name)
                     if self.use_video_storage and 'image_index_mapping' in episode_data:
                         # Video storage mode: check image_index_mapping
@@ -2074,8 +2205,7 @@ class DataCollector:
                 continue
             
             # Check image data
-            if any(key.endswith('_rgb_stream') or key.endswith('_depth_stream') or key.endswith('_depth_video') 
-                   for key in data_keys):
+            if any(_is_image_stream_key(key) for key in data_keys):
                 # Image data in images dictionary (using mapped friendly name)
                 if self.use_video_storage and 'image_index_mapping' in episode_data:
                     # Video storage mode: check image_index_mapping
@@ -2669,35 +2799,61 @@ class DataCollector:
             # Never let raw-data saving break the main save flow
             print(f"  ⚠️  Failed to save raw data: {e}")
 
+    def _select_master_camera(self, images, camera_name_mapping):
+        """Pick the internal camera key whose timestamps define the alignment grid.
+
+        Prefers the head RGB camera (monocular construction); for the binocular
+        (双目) construction where no head RGB exists, prefers the left/right eye,
+        then falls back to any camera that actually has frames. Only cameras with
+        non-empty data are considered.
+
+        Returns the internal stream key, or None if no camera has data.
+        """
+        # Friendly name -> internal key, restricted to cameras that have frames.
+        available = {
+            camera_name_mapping.get(internal, internal): internal
+            for internal, frames in images.items()
+            if frames
+        }
+        if not available:
+            return None
+
+        # 1) Honour the master-camera preference order.
+        for friendly in _MASTER_CAMERA_PRIORITY:
+            if friendly in available:
+                return available[friendly]
+
+        # 2) Fall back to the first enabled camera that has data (config order).
+        for internal in self.camera_names:
+            if internal in images and images[internal]:
+                return internal
+
+        # 3) Last resort: any camera with data.
+        return next(iter(available.values()))
+
     def _align_data_by_timestamp(self, sensor_data, images):
         """Align all data to a uniform time grid based on timestamp"""
 
         # Camera name mapping: internal stream name -> user friendly name
-        camera_name_mapping = {
-            'head_rgb_stream': 'head_camera',
-            'head_depth_stream': 'head_depth_camera',
-            'left_arm_rgb_stream': 'left_arm_camera',
-            'right_arm_rgb_stream': 'right_arm_camera'
-        }
+        camera_name_mapping = _CAMERA_NAME_MAPPING
 
-        # 1. Align image data frames based on the timestamp of the main camera (head camera)
-        # First find the internal key name of the main camera
-        head_camera_internal_name = None
-        for internal_name, friendly_name in camera_name_mapping.items():
-            if friendly_name == 'head_camera' and internal_name in images and images[internal_name]:
-                head_camera_internal_name = internal_name
-                break
+        # 1. Align image data frames based on the timestamp of the master camera.
+        # For the monocular construction this is the head RGB camera; for the
+        # binocular (双目) construction there is no head RGB, so the left/right
+        # eye act as the baseline instead (see _MASTER_CAMERA_PRIORITY).
+        head_camera_internal_name = self._select_master_camera(images, camera_name_mapping)
 
         if not head_camera_internal_name:
-            print("⚠️  Warning: the main camera (head_camera) has no data, cannot align the data")
+            print("⚠️  Warning: the master camera has no data, cannot align the data")
             print(f"   Available image streams: {list(images.keys())}")
             return None
 
-        # Use the timestamp of the main camera as the baseline time line
+        # Use the timestamp of the master camera as the baseline time line
         target_timestamps = [t for t, _ in images[head_camera_internal_name]]
         num_frames = len(target_timestamps)
 
-        print(f"   Use the timestamp of the main camera ({head_camera_internal_name}) as the baseline: {num_frames} frames")
+        master_friendly = camera_name_mapping.get(head_camera_internal_name, head_camera_internal_name)
+        print(f"   Use the timestamp of the master camera ({master_friendly}) as the baseline: {num_frames} frames")
 
         # Count the data of each sensor
         sensor_stats = [(name, len(data_list)) for name, data_list in sensor_data.items() if data_list]

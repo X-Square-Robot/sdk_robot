@@ -184,6 +184,44 @@ class ChassisController(threading.Thread):
                 # Continue running on error to avoid thread crash
                 pass
 
+def control_grippers(robot, observation: dict):
+    """Control grippers
+    """
+    left_gripper_joint_states = observation.get('left_gripper_joint_states')
+    right_gripper_joint_states = observation.get('right_gripper_joint_states')
+    if left_gripper_joint_states and 'positions' in left_gripper_joint_states and right_gripper_joint_states and 'positions' in right_gripper_joint_states:
+        left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
+        right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
+        if left_gripper_positions and right_gripper_positions:
+            try:
+                if (left_gripper_positions[0] < 0.0):
+                    left_gripper_positions[0] = 0.0
+                robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
+            except Exception as e:
+                print(f"Warning: Left gripper control failed - {e}")
+            try:
+                if (right_gripper_positions[0] < 0.0):
+                    right_gripper_positions[0] = 0.0
+                robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
+            except Exception as e:
+                print(f"Warning: Right gripper control failed - {e}")
+    elif (robot.get_robot_model() == "quanta_x2"):
+        left_gripper_position = observation.get('left_gripper_position')
+        right_gripper_position = observation.get('right_gripper_position')
+        if left_gripper_position and right_gripper_position:
+            try:
+                position = left_gripper_position['position']
+                robot.left_gripper.set_position(GripperPosition(position=position))
+            except Exception as e:
+                print(f"Warning: Left gripper control failed - {e}")
+            try:
+                position = right_gripper_position['position']
+                robot.right_gripper.set_position(GripperPosition(position=position))
+            except Exception as e:
+                print(f"Warning: Right gripper control failed - {e}")
+    else:
+        print(f"Warning: Gripper control failed - {e}")
+
 
 def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float = 1.0):
     """Replay all joints and chassis by joint positions
@@ -280,45 +318,8 @@ def replay_by_joint_positions(robot, episode_data: dict, playback_speed: float =
                     if not right_result.is_success:
                         print(f"Warning: Right arm control failed - {right_result.error_message}")
 
-            # [Step 3] Control grippers and head
-            if (robot_model == "quanta_x2"):
-                left_gripper_position = observation.get('left_gripper_position')
-                right_gripper_position = observation.get('right_gripper_position')
-                if left_gripper_position and right_gripper_position:
-                    try:
-                        position = left_gripper_position['position']
-                        robot.left_gripper.set_position(GripperPosition(position=position))
-                    except Exception as e:
-                        if i == 0:
-                            print(f"Warning: Left gripper control failed - {e}")
-                    try:
-                        position = right_gripper_position['position']
-                        robot.right_gripper.set_position(GripperPosition(position=position))
-                    except Exception as e:
-                        if i == 0:
-                            print(f"Warning: Right gripper control failed - {e}")
-            else:
-                # Get left gripper position
-                left_gripper_joint_states = observation.get('left_gripper_joint_states')
-                if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
-                    left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
-                    if left_gripper_positions:
-                        try:
-                            robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
-                        except Exception as e:
-                            if i == 0:
-                                print(f"Warning: Left gripper control failed - {e}")
-                
-                # Get right gripper position
-                right_gripper_joint_states = observation.get('right_gripper_joint_states')
-                if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
-                    right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
-                    if right_gripper_positions:
-                        try:
-                            robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
-                        except Exception as e:
-                            if i == 0:
-                                print(f"Warning: Right gripper control failed - {e}")
+            # [Step 3] Control grippers
+            control_grippers(robot, observation)
 
             # Get lift/waist position
             if robot_model == "quanta_x1":
@@ -588,45 +589,8 @@ def replay_by_end_pose(robot, episode_data: dict, playback_speed: float = 1.0):
                 valid_frames += 1
             
             # [Step 3] Control grippers and head
-            if (robot_model == "quanta_x2"):
-                left_gripper_position = observation.get('left_gripper_position')
-                right_gripper_position = observation.get('right_gripper_position')
-                if left_gripper_position and right_gripper_position:
-                    try:
-                        position = left_gripper_position['position']
-                        robot.left_gripper.set_position(GripperPosition(position=position))
-                    except Exception as e:
-                        if i == 0:
-                            print(f"Warning: Left gripper control failed - {e}")
-                    try:
-                        position = right_gripper_position['position']
-                        robot.right_gripper.set_position(GripperPosition(position=position))
-                    except Exception as e:
-                        if i == 0:
-                            print(f"Warning: Right gripper control failed - {e}")
-            else:
-                # Get left gripper position
-                left_gripper_joint_states = observation.get('left_gripper_joint_states')
-                if left_gripper_joint_states and 'positions' in left_gripper_joint_states:
-                    left_gripper_positions = filter_nan_values(left_gripper_joint_states['positions'])
-                    if left_gripper_positions:
-                        try:
-                            robot.left_gripper.set_position(GripperPosition(position=left_gripper_positions[0]))
-                        except Exception as e:
-                            if i == 0:
-                                print(f"Warning: Left gripper control failed - {e}")
-                
-                # Get right gripper position
-                right_gripper_joint_states = observation.get('right_gripper_joint_states')
-                if right_gripper_joint_states and 'positions' in right_gripper_joint_states:
-                    right_gripper_positions = filter_nan_values(right_gripper_joint_states['positions'])
-                    if right_gripper_positions:
-                        try:
-                            robot.right_gripper.set_position(GripperPosition(position=right_gripper_positions[0]))
-                        except Exception as e:
-                            if i == 0:
-                                print(f"Warning: Right gripper control failed - {e}")
-                
+            control_grippers(robot, observation)
+
             # Get head position
             head_joint_states = observation.get('head_joint_states')
             if head_joint_states and 'positions' in head_joint_states:

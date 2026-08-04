@@ -51,11 +51,49 @@ def create_collection_config_for_quanta_x1() -> CollectionConfig:
 
     return collection_config
 
+def create_collection_config_for_quanta_x1_binocular() -> CollectionConfig:
+    """Collection config for the quanta_x1 binocular (双目) camera construction.
+
+    The binocular head exposes left/right eye cameras instead of a single head
+    RGB camera, and each arm additionally exposes an elbow camera. All of these
+    streams are H.26x encoded and are decoded automatically by the collector.
+    """
+    collection_config = CollectionConfig()
+
+    collection_config.slave_joint_names = [
+        'left_arm_joint_states',
+        'right_arm_joint_states',
+        'lift_joint_states',
+        'left_gripper_joint_states',
+        'right_gripper_joint_states',
+        'head_joint_states'
+    ]
+    # Binocular head cameras (left/right eye) instead of a single head RGB stream
+    collection_config.enable_head_left_eye_stream = True   # Collect head left-eye video stream
+    collection_config.enable_head_right_eye_stream = True  # Collect head right-eye video stream
+    # Wrist RGB cameras
+    collection_config.enable_left_arm_rgb_stream = True    # Collect left arm (wrist) RGB video stream
+    collection_config.enable_right_arm_rgb_stream = True   # Collect right arm (wrist) RGB video stream
+    # Elbow cameras (binocular construction)
+    collection_config.enable_left_arm_elbow_stream = True  # Collect left arm elbow video stream
+    collection_config.enable_right_arm_elbow_stream = True # Collect right arm elbow video stream
+
+    collection_config.enable_left_arm_end_pose = True # Collect left arm end pose
+    collection_config.enable_right_arm_end_pose = True # Collect right arm end pose
+    collection_config.enable_odometry = True # Collect odometry data
+    collection_config.enable_master_arm_data = True # Collect master arm joint states and end pose
+    collection_config.enable_wrench_ext_world = True # Collect wrist external force
+    collection_config.enable_wrench_ext_local = True # Collect wrist local force
+
+    return collection_config
+
 def create_collection_config_for_quanta_x2() -> CollectionConfig:
     collection_config = CollectionConfig()
     collection_config.slave_joint_names = [
         'left_arm_joint_states',
         'right_arm_joint_states',
+        'left_gripper_joint_states',
+        'right_gripper_joint_states',
         'waist_joint_states',
         'head_joint_states'
     ]
@@ -65,8 +103,8 @@ def create_collection_config_for_quanta_x2() -> CollectionConfig:
     collection_config.enable_right_arm_rgb_stream = True # Collect right arm RGB video stream
     collection_config.enable_left_arm_end_pose = True # Collect left arm end pose
     collection_config.enable_right_arm_end_pose = True # Collect right arm end pose
-    collection_config.enable_left_gripper_position = True # Collect left gripper position
-    collection_config.enable_right_gripper_position = True # Collect right gripper position
+    # collection_config.enable_left_gripper_position = True # Collect left gripper position
+    # collection_config.enable_right_gripper_position = True # Collect right gripper position
     collection_config.enable_odometry = True # Collect odometry data
 
     collection_config.enable_waist_end_pose = True # Collect waist end pose
@@ -99,6 +137,7 @@ def create_collection_config_for_desktop() -> CollectionConfig:
 def main(
     server: Annotated[str, typer.Option(help="server address, e.g., localhost:50051")] = "localhost:50051",
     keep_raw_data: Annotated[bool, typer.Option(help="also save pre-alignment raw streams into episode_xxxx/raw_data/")] = False,
+    binocular: Annotated[bool, typer.Option(help="use the quanta_x1 binocular (双目) camera construction: left/right eye + left/right elbow cameras")] = False,
 ):
     # Register signal handler
     signal.signal(signal.SIGINT, signal_handler)
@@ -109,7 +148,11 @@ def main(
     print("✓ Robot connected successfully")
 
     if robot.get_robot_model() == "quanta_x1":
-        collection_config = create_collection_config_for_quanta_x1()
+        if binocular:
+            print("Using quanta_x1 binocular (双目) camera construction")
+            collection_config = create_collection_config_for_quanta_x1_binocular()
+        else:
+            collection_config = create_collection_config_for_quanta_x1()
     elif robot.get_robot_model() == "quanta_x2":
         collection_config = create_collection_config_for_quanta_x2()
     elif robot.get_robot_model() == "desktop":

@@ -6,29 +6,51 @@
 
 **Functions:**
 
-- Get head camera RGB images and depth map data
-- Get left and right arm camera RGB image data
+- Get head camera RGB / depth / left-eye / right-eye images and streams
+- Get left and right arm wrist and elbow camera images and streams
+- Snapshot **all** cameras at once (skips cameras not present on the platform)
+
+> Configuration note: the monocular configuration exposes head RGB/depth and
+> wrist cameras; the binocular configuration exposes head left/right eye, wrist,
+> and elbow cameras. Cameras absent from a configuration return `UNAVAILABLE`
+> and are skipped. H.26x cameras publish H.264/H.265 encoded
+> frames, which are decoded as a continuous stream with PyAV. The `all` command
+> only reports metadata for H.26x snapshots because an isolated packet may not
+> contain the parameter sets and keyframe required for decoding.
 
 **Usage:**
 
 ```bash
+# Read every camera on the robot (one frame each); optionally save/show decodable frames
+python3 camera.py all --server 192.168.10.1:50051
+python3 camera.py all --server 192.168.10.1:50051 --save-dir ./snapshots --show
+
 # Head RGB image
 python3 camera.py head rgb-image --server 192.168.10.1:50051
 
 # Head camera depth map
 python3 camera.py head depth-image --server 192.168.10.1:50051
 
-# Head RGB stream
+# Head left / right eye image (binocular configuration)
+python3 camera.py head left-eye-image --server 192.168.10.1:50051
+python3 camera.py head right-eye-image --server 192.168.10.1:50051
+
+# Head RGB / depth / eye streams
 python3 camera.py head rgb-stream --server 192.168.10.1:50051
-
-# Head depth stream
 python3 camera.py head depth-stream --server 192.168.10.1:50051
+python3 camera.py head left-eye-stream --server 192.168.10.1:50051
 
-# Left arm single RGB image
+# Left arm wrist single image / stream
 python3 camera.py left-arm raw-image --server 192.168.10.1:50051
-
-# Left arm RGB stream
 python3 camera.py left-arm stream --server 192.168.10.1:50051
+
+# Left arm elbow single image / stream (binocular configuration)
+python3 camera.py left-arm elbow-image --server 192.168.10.1:50051
+python3 camera.py left-arm elbow-stream --server 192.168.10.1:50051
+
+# Right arm works the same way
+python3 camera.py right-arm raw-image --server 192.168.10.1:50051
+python3 camera.py right-arm elbow-image --server 192.168.10.1:50051
 ```
 
 ---
@@ -55,6 +77,8 @@ python3 chassis_control.py --server 192.168.10.1:50051 --control_mode keyboard
 python3 chassis_control.py --server 192.168.10.1:50051 --control_mode map
 ```
 
+> **Note:** While the robot is charging, chassis movement APIs (including `move_by_velocity()` and the keyboard/map controls in this example) cannot move the robot.
+
 ---
 
 ## check_connect.py
@@ -78,6 +102,7 @@ python check_connect.py --server 192.168.10.1:50051
 - MasterArm-specific control example using `robot.master_left_arm` / `robot.master_right_arm`
 - Sets MasterArm mode through each arm stub: `master_left_arm.set_control_mode()` / `master_right_arm.set_control_mode()`
 - Keeps the reusable TOPPRA trajectory logic from ordinary `arm_control.py`: joint-space TOPPRA and end-pose position TOPPRA + SLERP
+- Uses 200Hz as the default command rate
 - Supports read, snapshot, set mode, joint writes, end-pose writes, zero, and joint/end-pose/gripper streams
 - Supports `--arm both` to control left and right MasterArm together; run streams in separate terminals
 - Write actions require `--write`
@@ -113,6 +138,15 @@ python3 desktop/master_arm_control.py \
   --mode joint-pos \
   --joint-index 0 \
   --joint-delta 0.05 \
+  --write
+
+# Desktop: move right MasterArm to an explicit end pose
+python3 desktop/master_arm_control.py \
+  --server 192.168.10.1:50051 \
+  --arm right \
+  --action move \
+  --mode end-pose \
+  --target-pose '0.02,0,0,0,0,0,1' \
   --write
 
 # Quanta X1: read left MasterArm
@@ -157,6 +191,41 @@ python3 robot_control.py --action recover --server 192.168.10.1:50051
 
 # Homing (default action)
 python3 robot_control.py --action homing --server 192.168.10.1:50051
+```
+
+---
+
+## robot_status.py
+
+**Functions:**
+
+- `get_robot_status()`: Query the robot's real-time status
+- On success, returns `SdkResult` with `data` grouped into `energy`, `motion`, `execution`, `safety`, and `health`; unavailable fields are `null`
+- Optional `fields` filter: pass a category (e.g. `"energy"`) or a two-level path (e.g. `"energy.battery_level"`) to request only what you need
+
+**Usage:**
+
+```bash
+python3 robot_status.py --server 192.168.10.1:50051
+```
+
+**API example:**
+
+```python
+from x2robot import connect
+
+robot = connect("x2://192.168.10.1:50051")
+
+# Query all status fields
+result = robot.get_robot_status()
+if result.is_success:
+    print(result.data["energy"]["battery_level"])
+    print(result.data["safety"]["emergency_stop_active"])
+else:
+    print(result.error)
+
+# Query specific categories or fields
+result = robot.get_robot_status(fields=["energy", "safety.emergency_stop_active"])
 ```
 
 ---

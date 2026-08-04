@@ -6,29 +6,49 @@
 
 **功能说明:**
 
-- 获取头部相机 RGB 图像和深度图数据
-- 获取左右手臂相机的 RGB 图像数据
+- 获取头部相机 RGB / 深度 / 左眼 / 右眼 图像及视频流
+- 获取左右手臂 腕部 / 肘部 相机图像及视频流
+- 一次性抓取 **所有** 相机（该平台没有的相机自动跳过）
+
+> 构型说明：单目相机构型提供头部 RGB/depth 及左右腕相机；双目相机构型提供头部
+> 左/右眼、左右腕及左右肘相机。当前构型不存在的相机会返回 `UNAVAILABLE` 并被跳过。
+> H.26x 相机发布的是
+> (H.264/H.265) 编码帧，示例使用 PyAV 按连续视频流解码。`all` 命令中的 H.26x
+> 单包可能不包含解码所需的参数集和关键帧，因此只报告元数据，不尝试解码或保存。
 
 **使用方法:**
 
 ```bash
+# 读取机器人上所有相机（各抓一帧）；可选保存/显示可解码的帧
+python3 camera.py all --server 192.168.10.1:50051
+python3 camera.py all --server 192.168.10.1:50051 --save-dir ./snapshots --show
+
 # 头部 RGB 图像
 python3 camera.py head rgb-image --server 192.168.10.1:50051
 
 # 头部相机深度图
 python3 camera.py head depth-image --server 192.168.10.1:50051
 
-# 头部 RGB 流
+# 头部 左眼 / 右眼 图像（双目相机构型）
+python3 camera.py head left-eye-image --server 192.168.10.1:50051
+python3 camera.py head right-eye-image --server 192.168.10.1:50051
+
+# 头部 RGB / 深度 / 眼 视频流
 python3 camera.py head rgb-stream --server 192.168.10.1:50051
-
-# 头部深度流
 python3 camera.py head depth-stream --server 192.168.10.1:50051
+python3 camera.py head left-eye-stream --server 192.168.10.1:50051
 
-# 左臂单张 RGB 图像
+# 左臂 腕部 单张图像 / 视频流
 python3 camera.py left-arm raw-image --server 192.168.10.1:50051
-
-# 左臂 RGB 流
 python3 camera.py left-arm stream --server 192.168.10.1:50051
+
+# 左臂 肘部 单张图像 / 视频流（双目相机构型）
+python3 camera.py left-arm elbow-image --server 192.168.10.1:50051
+python3 camera.py left-arm elbow-stream --server 192.168.10.1:50051
+
+# 右臂用法相同
+python3 camera.py right-arm raw-image --server 192.168.10.1:50051
+python3 camera.py right-arm elbow-image --server 192.168.10.1:50051
 ```
 
 ---
@@ -55,6 +75,8 @@ python3 chassis_control.py --server 192.168.10.1:50051 --control_mode keyboard
 python3 chassis_control.py --server 192.168.10.1:50051 --control_mode map
 ```
 
+> **注意：** 机器人在充电状态下调用底盘移动相关接口（含 `move_by_velocity()` 及本示例中的键盘/地图控制）无法移动机器人。
+
 ---
 
 ## check_connect.py
@@ -78,6 +100,7 @@ python check_connect.py --server 192.168.10.1:50051
 - MasterArm 专用控制示例，使用 `robot.master_left_arm` / `robot.master_right_arm`
 - 主臂模式由各自 arm stub 设置：`master_left_arm.set_control_mode()` / `master_right_arm.set_control_mode()`
 - 写入执行逻辑保留普通 `arm_control.py` 中可复用的 TOPPRA 连续轨迹：关节空间 TOPPRA、末端 position TOPPRA + SLERP
+- 默认写命令频率为 200Hz
 - 支持只读、snapshot、切模式、关节写入、末端写入、zero、关节/末端/gripper stream
 - 支持 `--arm both` 同时控制左右主臂；stream 建议左右分终端运行
 - 写操作需要 `--write`
@@ -113,6 +136,15 @@ python3 desktop/master_arm_control.py \
   --mode joint-pos \
   --joint-index 0 \
   --joint-delta 0.05 \
+  --write
+
+# Desktop: 右主臂移动到指定末端位姿
+python3 desktop/master_arm_control.py \
+  --server 192.168.10.1:50051 \
+  --arm right \
+  --action move \
+  --mode end-pose \
+  --target-pose '0.02,0,0,0,0,0,1' \
   --write
 
 # Quanta X1: 只读左主臂
@@ -157,6 +189,41 @@ python3 robot_control.py --action recover --server 192.168.10.1:50051
 
 # 回零（默认操作）
 python3 robot_control.py --action homing --server 192.168.10.1:50051
+```
+
+---
+
+## robot_status.py
+
+**功能说明:**
+
+- `get_robot_status()`: 查询机器人整机实时状态
+- 成功时返回 `SdkResult`，`data` 按 `energy`、`motion`、`execution`、`safety`、`health` 分组；取不到或未采集的字段为 `null`
+- 可选 `fields` 过滤：传类别名（如 `"energy"`）或两级路径（如 `"energy.battery_level"`）按需查询
+
+**使用方法:**
+
+```bash
+python3 robot_status.py --server 192.168.10.1:50051
+```
+
+**API 示例:**
+
+```python
+from x2robot import connect
+
+robot = connect("x2://192.168.10.1:50051")
+
+# 查询全部状态字段
+result = robot.get_robot_status()
+if result.is_success:
+    print(result.data["energy"]["battery_level"])
+    print(result.data["safety"]["emergency_stop_active"])
+else:
+    print(result.error)
+
+# 按类别或字段过滤查询
+result = robot.get_robot_status(fields=["energy", "safety.emergency_stop_active"])
 ```
 
 ---

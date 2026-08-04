@@ -132,8 +132,10 @@ def set_master_mode(master_arm, mode: str):
         target = ManipulatorControlMode.MANIPULATOR_JOINT_POSITIONS
     elif mode == "end_pose":
         target = ManipulatorControlMode.MANIPULATOR_END_POSE
+    elif mode == "gravity":
+        target = ManipulatorControlMode.MANIPULATOR_GRAVITY_COMPENSATION
     else:
-        raise ValueError("mode must be joint_pos or end_pose")
+        raise ValueError("mode must be joint_pos, end_pose, or gravity")
 
     result = master_arm.set_control_mode(ManipulatorControlModeParam(mode=target))
     print_message(f"set_control_mode({mode})", result)
@@ -514,39 +516,39 @@ def zero_master_arm(master_arm, mode: str, rate_hz: float, hold: float) -> None:
 def stream_master_arm(master_arm, stream: str, interval: float, samples: int) -> None:
     print("Streaming. Press Ctrl+C to stop.")
     count = 0
+    next_print_time = 0.0
 
     def should_stop() -> bool:
         return samples > 0 and count >= samples
 
+    def print_latest(title: str, message) -> bool:
+        nonlocal count, next_print_time
+        now = time.monotonic()
+        if interval > 0.0 and now < next_print_time:
+            return False
+
+        print_message(title, message)
+        count += 1
+        next_print_time = now + interval
+        return should_stop()
+
     try:
         if stream == "joint_states":
             for joint_state in master_arm.get_joint_states_stream():
-                print_message("joint state", joint_state)
-                count += 1
-                if should_stop():
+                if print_latest("joint state", joint_state):
                     break
-                time.sleep(interval)
         elif stream == "end_pose":
             for end_pose in master_arm.get_end_pose_stream():
-                print_message("end pose", end_pose)
-                count += 1
-                if should_stop():
+                if print_latest("end pose", end_pose):
                     break
-                time.sleep(interval)
         elif stream == "gripper_state":
             for gripper_state in master_arm.get_gripper_state_stream():
-                print_message("gripper state", gripper_state)
-                count += 1
-                if should_stop():
+                if print_latest("gripper state", gripper_state):
                     break
-                time.sleep(interval)
         elif stream == "gripper_joint_states":
             for gripper_joint_state in master_arm.get_gripper_joint_states_stream():
-                print_message("gripper joint state", gripper_joint_state)
-                count += 1
-                if should_stop():
+                if print_latest("gripper joint state", gripper_joint_state):
                     break
-                time.sleep(interval)
         else:
             raise ValueError("stream must be joint_states, end_pose, gripper_state, or gripper_joint_states")
     except KeyboardInterrupt:
@@ -558,7 +560,7 @@ def main(
     model: Annotated[str, typer.Option(help="client model registry: auto, desktop, or quanta_x1")] = DEFAULT_MODEL,
     arm: Annotated[str, typer.Option(help="left, right, or both")] = "left",
     action: Annotated[str, typer.Option(help="read, snapshot, set-mode, move, zero, or stream")] = "read",
-    mode: Annotated[str, typer.Option(help="joint-pos or end-pose for set-mode/move/zero")] = "joint_pos",
+    mode: Annotated[str, typer.Option(help="joint-pos, end-pose, or gravity for set-mode; move/zero use joint-pos or end-pose")] = "joint_pos",
     query: Annotated[str, typer.Option(help="all, control-mode, joint-states, end-pose, gripper-position")] = "all",
     stream: Annotated[str, typer.Option(help="joint-states, end-pose, gripper-state, gripper-joint-states")] = "joint_states",
     write: Annotated[bool, typer.Option(help="required for set-mode, move, and zero")] = False,
@@ -572,7 +574,7 @@ def main(
     rate_hz: Annotated[float, typer.Option(help="stream command rate")] = 200.0,
     hold: Annotated[float, typer.Option(help="seconds to hold target before return")] = 2.0,
     return_original: Annotated[bool, typer.Option(help="return to original after move")] = True,
-    stream_interval: Annotated[float, typer.Option(help="seconds between printed stream samples")] = 0.1,
+    stream_interval: Annotated[float, typer.Option(help="minimum seconds between displayed latest stream samples")] = 0.005,
     samples: Annotated[int, typer.Option(help="stream sample count; 0 means unlimited")] = 0,
 ):
     """MasterArm-only example.
@@ -589,14 +591,18 @@ def main(
         raise typer.BadParameter("arm must be left, right, or both")
     if action not in ("read", "snapshot", "set_mode", "move", "zero", "stream"):
         raise typer.BadParameter("action must be read, snapshot, set-mode, move, zero, or stream")
-    if mode not in ("joint_pos", "end_pose"):
-        raise typer.BadParameter("mode must be joint-pos or end-pose")
+    if mode not in ("joint_pos", "end_pose", "gravity"):
+        raise typer.BadParameter("mode must be joint-pos, end-pose, or gravity")
+    if action in ("move", "zero") and mode == "gravity":
+        raise typer.BadParameter("move/zero do not support gravity mode")
     if query not in ("all", "control_mode", "joint_states", "end_pose", "gripper_position"):
         raise typer.BadParameter("query must be all, control-mode, joint-states, end-pose, or gripper-position")
     if stream not in ("joint_states", "end_pose", "gripper_state", "gripper_joint_states"):
         raise typer.BadParameter("stream must be joint-states, end-pose, gripper-state, or gripper-joint-states")
     if axis not in ("x", "y", "z"):
         raise typer.BadParameter("axis must be x, y, or z")
+    if stream_interval < 0.0:
+        raise typer.BadParameter("stream-interval must be greater than or equal to 0")
     validate_rate(rate_hz)
     if hold < 0:
         raise typer.BadParameter("hold must be >= 0")

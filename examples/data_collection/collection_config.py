@@ -42,7 +42,21 @@ class CollectionConfig:
 
     enable_right_arm_rgb_stream: bool = False
     """Enable right arm RGB video stream"""
-    
+
+    # Binocular (双目) camera configuration for quanta_x1 stereo construction
+    # These streams are H.26x encoded and decoded automatically during collection.
+    enable_head_left_eye_stream: bool = False
+    """Enable head left-eye video stream (binocular head construction)"""
+
+    enable_head_right_eye_stream: bool = False
+    """Enable head right-eye video stream (binocular head construction)"""
+
+    enable_left_arm_elbow_stream: bool = False
+    """Enable left arm elbow camera video stream (binocular construction)"""
+
+    enable_right_arm_elbow_stream: bool = False
+    """Enable right arm elbow camera video stream (binocular construction)"""
+
     # End pose
     enable_left_arm_end_pose: bool = False
     """Enable left arm end pose"""
@@ -129,5 +143,14 @@ class CollectionConfig:
             cameras.append('left_arm_rgb_stream')
         if self.enable_right_arm_rgb_stream:
             cameras.append('right_arm_rgb_stream')
+        # Binocular (双目) construction cameras
+        if self.enable_head_left_eye_stream:
+            cameras.append('head_left_eye_stream')
+        if self.enable_head_right_eye_stream:
+            cameras.append('head_right_eye_stream')
+        if self.enable_left_arm_elbow_stream:
+            cameras.append('left_arm_elbow_stream')
+        if self.enable_right_arm_elbow_stream:
+            cameras.append('right_arm_elbow_stream')
         return cameras
 
