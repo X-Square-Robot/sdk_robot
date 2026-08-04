@@ -62,6 +62,8 @@
    * [get_position](#rightgrippercontroller-get_position)
    * [get_position_stream](#rightgrippercontroller-get_position_stream)
    * [get_joint_states_stream](#rightgrippercontroller-get_joint_states_stream)
+* [RobotStatus](#robotstatus)
+   * [get_robot_status](#robotstatus-get_robot_status)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
@@ -76,11 +78,14 @@
 * [PoseStamped](#message-geometry_msgsposestamped)
 * [PoseWithCovariance](#message-geometry_msgsposewithcovariance)
 * [Quaternion](#message-geometry_msgsquaternion)
+* [Transform](#message-geometry_msgstransform)
+* [TransformStamped](#message-geometry_msgstransformstamped)
 * [Vector3](#message-geometry_msgsvector3)
 * [Wrench](#message-geometry_msgswrench)
 * [WrenchStamped](#message-geometry_msgswrenchstamped)
 * [CompressedImage](#message-sensor_msgscompressedimage)
 * [JointState](#message-sensor_msgsjointstate)
+* [TFMessage](#message-tf2_msgstfmessage)
 * [AudioData](#message-xrsdkaudiodata)
 * [AudioDataStamped](#message-xrsdkaudiodatastamped)
 * [AudioInfo](#message-xrsdkaudioinfo)
@@ -89,6 +94,9 @@
 * [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
 * [FileTransferMeta](#message-xrsdkfiletransfermeta)
+* [GetMapListResponse](#message-xrsdkgetmaplistresponse)
+* [GetRobotStatusReply](#message-xrsdkgetrobotstatusreply)
+* [GetRobotStatusRequest](#message-xrsdkgetrobotstatusrequest)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [JointPositions](#message-xrsdkjointpositions)
 * [ManipulatorControlModeParam](#message-xrsdkmanipulatorcontrolmodeparam)
@@ -157,13 +165,13 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 适用于量子2号机型
 
-* `上限: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `下限: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `上限: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `下限: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 适用于量子1号和桌面主从机型
 
-* `上限: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `下限: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `上限: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `下限: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 **参数:**
 
@@ -609,6 +617,8 @@ def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
 def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
 ```
 
+Placeholder methods, backend is not supported yet.
+
 **参数:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
@@ -627,7 +637,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 Control end effector pose (must set END_POSE mode first)
 position: [x, y, z] in meters, range: [-5.0, 5.0]
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **参数:**
 
@@ -821,6 +831,8 @@ def get_gripper_state_stream(timeout) -> Iterator[GripperPosition]
 def set_joint_positions(joint_positions: JointPositions, timeout) -> ExecutionResult
 ```
 
+Placeholder methods, backend is not supported yet.
+
 **参数:**
 
 * `joint_positions` ([`JointPositions`](#message-xrsdkjointpositions))
@@ -839,7 +851,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 Control end effector pose (must set END_POSE mode first)
 position: [x, y, z] in meters, range: [-5.0, 5.0]
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **参数:**
 
@@ -1201,6 +1213,29 @@ def get_joint_states_stream(timeout) -> Iterator[_sensor_msgs__.JointState]
 
 ---
 
+<h3 id="robotstatus">RobotStatus</h3>
+
+整机实时状态查询服务；客户端将 JSON 载荷封装为 SdkResult。
+
+<h4 id="robotstatus-get_robot_status">get_robot_status</h4>
+
+```python
+def get_robot_status(fields = None, request_id = None) -> SdkResult
+```
+
+查询机器人整机实时状态。
+
+**参数:**
+
+* `fields` - 过滤字段列表。None 或 [] 返回全部；支持两级路径，如 ["energy"]（整类）或 ["energy.battery_level"]（单字段）。
+* `request_id` - 单次调用的 trace id；省略时自动生成 uuid4，并在 SdkResult.request_id 中原样返回，便于日志关联。
+
+**返回:**
+
+* `SdkResult`：成功时 `data` 为状态 dict（energy/motion/execution/safety/health）；失败时 `error` 为标准 ErrorCode
+
+---
+
 <h3 id="system">System</h3>
 
 <h4 id="system-set_work_mode">set_work_mode</h4>
@@ -1354,6 +1389,31 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-geometry_msgstransform"></a>
+#### Transform
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `translation` | [`Vector3`](#message-geometry_msgsvector3) |  |
+| `rotation` | [`Quaternion`](#message-geometry_msgsquaternion) |  |
+
+---
+
+<a id="message-geometry_msgstransformstamped"></a>
+#### TransformStamped
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `header` | `Header` |  |
+| `child_frame_id` | `string` |  |
+| `transform` | [`Transform`](#message-geometry_msgstransform) |  |
+
+---
+
 <a id="message-geometry_msgsvector3"></a>
 #### Vector3
 
@@ -1416,6 +1476,17 @@ Get robot model type (works on all models, does not depend on application node)
 | `position` | List[`double`] |  |
 | `velocity` | List[`double`] |  |
 | `effort` | List[`double`] |  |
+
+---
+
+<a id="message-tf2_msgstfmessage"></a>
+#### TFMessage
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `transforms` | List[[`TransformStamped`](#message-geometry_msgstransformstamped)] |  |
 
 ---
 
@@ -1517,6 +1588,40 @@ Get robot model type (works on all models, does not depend on application node)
 
 ---
 
+<a id="message-xrsdkgetmaplistresponse"></a>
+#### GetMapListResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `header` | [`ExecutionResult`](#message-xrsdkexecutionresult) | Call status: is_success / error_code / error_message |
+| `map_list` | List[`string`] | List of saved map names |
+
+---
+
+<a id="message-xrsdkgetrobotstatusreply"></a>
+#### GetRobotStatusReply
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `json` | `string` | Payload (JSON string) grouped into energy/motion/execution/safety/health.<br>Unavailable or uncaptured fields are null. |
+
+---
+
+<a id="message-xrsdkgetrobotstatusrequest"></a>
+#### GetRobotStatusRequest
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `fields` | List[`string`] | Filter field list:<br>empty -> all fields;<br>"energy" -> whole category;<br>"energy.battery_level" -> single field (two-level path). |
+
+---
+
 <a id="message-xrsdkgripperposition"></a>
 #### GripperPosition
 
@@ -1524,6 +1629,7 @@ Get robot model type (works on all models, does not depend on application node)
 
 | 字段 | 类型 | 说明 |
 |------|------|--------|
+| `header` | `Header` |  |
 | `position` | `float` |  |
 
 ---
@@ -1713,6 +1819,7 @@ Get robot model type (works on all models, does not depend on application node)
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
 | `EX001_MASTER` (4) |  |
+| `EX002` (5) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

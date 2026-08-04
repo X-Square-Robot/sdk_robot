@@ -37,5 +37,23 @@ def export(
     _print_result(result)
 
 
+@app.command(name="list")
+def list_maps(
+    server: Annotated[str, typer.Option(help="Server address")] = "localhost:50051",
+):
+    """List the saved map names on the robot."""
+    robot = connect(f"x2://{server}")
+    result = robot.navigation.get_map_list()
+    status = "OK" if result.header.is_success else "FAIL"
+    print(f"[{status}] error_code={result.header.error_code} message={result.header.error_message!r}")
+    if result.header.is_success:
+        if result.map_list:
+            print(f"{len(result.map_list)} map(s):")
+            for name in result.map_list:
+                print(f"  - {name}")
+        else:
+            print("(no maps)")
+
+
 if __name__ == "__main__":
     app()

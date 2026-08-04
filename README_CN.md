@@ -206,6 +206,10 @@ sudo netstat -anp | grep 50051
 - 量子2号: [API 文档](docs/API_Quanta_X2_CN.md)。
 - 桌面六轴臂系列产品：[API 文档](docs/API_Desktop_CN.md)。
 
+## 版本命名规则
+
+SDK Client（`x2robot` 包）的版本号约定见 [版本命名规则](docs/VERSIONING_CN.md)。
+
 ## 示例
 
 代码示例请查看 [示例目录](examples/)。

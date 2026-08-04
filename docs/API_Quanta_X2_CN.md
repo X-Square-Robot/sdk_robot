@@ -70,6 +70,7 @@
    * [cancel_navigation](#navigation-cancel_navigation)
    * [load_map](#navigation-load_map)
    * [export_map](#navigation-export_map)
+   * [get_map_list](#navigation-get_map_list)
 * [RadarService](#radarservice)
    * [get_laser_scan](#radarservice-get_laser_scan)
    * [get_laser_scan_stream](#radarservice-get_laser_scan_stream)
@@ -99,6 +100,8 @@
    * [homing](#robotcontrol-homing)
    * [emergency_stop](#robotcontrol-emergency_stop)
    * [recover_emergency_stop](#robotcontrol-recover_emergency_stop)
+* [RobotStatus](#robotstatus)
+   * [get_robot_status](#robotstatus-get_robot_status)
 * [System](#system)
    * [set_work_mode](#system-set_work_mode)
    * [get_static_info](#system-get_static_info)
@@ -134,6 +137,8 @@
 * [PoseStamped](#message-geometry_msgsposestamped)
 * [PoseWithCovariance](#message-geometry_msgsposewithcovariance)
 * [Quaternion](#message-geometry_msgsquaternion)
+* [Transform](#message-geometry_msgstransform)
+* [TransformStamped](#message-geometry_msgstransformstamped)
 * [Twist](#message-geometry_msgstwist)
 * [TwistWithCovariance](#message-geometry_msgstwistwithcovariance)
 * [Vector3](#message-geometry_msgsvector3)
@@ -152,6 +157,7 @@
 * [MultiArrayDimension](#message-std_msgsmultiarraydimension)
 * [MultiArrayLayout](#message-std_msgsmultiarraylayout)
 * [String](#message-std_msgsstring)
+* [TFMessage](#message-tf2_msgstfmessage)
 * [AudioData](#message-xrsdkaudiodata)
 * [AudioDataStamped](#message-xrsdkaudiodatastamped)
 * [AudioInfo](#message-xrsdkaudioinfo)
@@ -165,6 +171,9 @@
 * [DownloadResponse](#message-xrsdkdownloadresponse)
 * [ExecutionResult](#message-xrsdkexecutionresult)
 * [FileTransferMeta](#message-xrsdkfiletransfermeta)
+* [GetMapListResponse](#message-xrsdkgetmaplistresponse)
+* [GetRobotStatusReply](#message-xrsdkgetrobotstatusreply)
+* [GetRobotStatusRequest](#message-xrsdkgetrobotstatusrequest)
 * [GripperPosition](#message-xrsdkgripperposition)
 * [HeadPose](#message-xrsdkheadpose)
 * [JointPositions](#message-xrsdkjointpositions)
@@ -370,6 +379,8 @@ def set_velocity(chassis_velocity: ChassisVelocity, timeout) -> ExecutionResult
 ```
 
 设置速度控制（必须先设置VELOCITY模式）
+
+> **注意：** 机器人在充电状态下调用该接口无法移动机器人。
 
 **参数:**
 
@@ -629,11 +640,15 @@ def get_chassis_depth_points_stream(timeout) -> Iterator[_sensor_msgs__.PointClo
 
 <h3 id="headcamera">HeadCamera</h3>
 
+HeadCamera 头部相机
+
 <h4 id="headcamera-get_rgb_image">get_rgb_image</h4>
 
 ```python
 def get_rgb_image(timeout) -> _sensor_msgs__.CompressedImage
 ```
+
+单目相机构型：头部 RGB 图像
 
 **参数:**
 
@@ -654,6 +669,8 @@ def get_rgb_image(timeout) -> _sensor_msgs__.CompressedImage
 def get_depth_image(timeout) -> _sensor_msgs__.CompressedImage
 ```
 
+单目相机构型：头部深度图像
+
 **参数:**
 
 * 无参数
@@ -673,6 +690,8 @@ def get_depth_image(timeout) -> _sensor_msgs__.CompressedImage
 def get_rgb_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```
 
+单目相机构型：头部 RGB 视频流
+
 **参数:**
 
 * 无参数
@@ -691,6 +710,8 @@ def get_rgb_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```python
 def get_depth_video_stream(timeout) -> Iterator[_sensor_msgs__.CompressedImage]
 ```
+
+单目相机构型：头部深度视频流
 
 **参数:**
 
@@ -848,6 +869,8 @@ def get_chassis_imu_stream(timeout) -> Iterator[_sensor_msgs__.Imu]
 
 <h3 id="leftarmcamera">LeftArmCamera</h3>
 
+LeftArmCamera 左臂相机
+
 <h4 id="leftarmcamera-get_raw_image">get_raw_image</h4>
 
 ```python
@@ -928,13 +951,13 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 适用于量子2号机型
 
-* `上限: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `下限: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `上限: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `下限: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 适用于量子1号和桌面主从机型
 
-* `上限: [5.0, 5.0, 5.0, 3.14, 3.14, 3.14, 3.14]`
-* `下限: [-5.0, -5.0, -5.0, -3.14, -3.14, -3.14, -3.14]`
+* `上限: [5.0, 5.0, 5.0, 1.0, 1.0, 1.0, 1.0]`
+* `下限: [-5.0, -5.0, -5.0, -1.0, -1.0, -1.0, -1.0]`
 
 **参数:**
 
@@ -1337,6 +1360,24 @@ Export a map from the robot as a tar.gz stream of a directory.
 
 ---
 
+<h4 id="navigation-get_map_list">get_map_list</h4>
+
+```python
+def get_map_list(timeout) -> GetMapListResponse
+```
+
+Get the list of saved map names
+
+**参数:**
+
+* 无参数
+
+**返回:**
+
+* [`GetMapListResponse`](#message-xrsdkgetmaplistresponse)
+
+---
+
 <h3 id="radarservice">RadarService</h3>
 
 雷达服务
@@ -1396,6 +1437,8 @@ def get_laser_scan_stream(timeout) -> Iterator[_sensor_msgs__.LaserScan]
 ---
 
 <h3 id="rightarmcamera">RightArmCamera</h3>
+
+RightArmCamera 右臂相机（语义同 LeftArmCamera）
 
 <h4 id="rightarmcamera-get_raw_image">get_raw_image</h4>
 
@@ -1824,6 +1867,29 @@ def recover_emergency_stop(timeout) -> ExecutionResult
 
 ---
 
+<h3 id="robotstatus">RobotStatus</h3>
+
+整机实时状态查询服务；客户端将 JSON 载荷封装为 SdkResult。
+
+<h4 id="robotstatus-get_robot_status">get_robot_status</h4>
+
+```python
+def get_robot_status(fields = None, request_id = None) -> SdkResult
+```
+
+查询机器人整机实时状态。
+
+**参数:**
+
+* `fields` - 过滤字段列表。None 或 [] 返回全部；支持两级路径，如 ["energy"]（整类）或 ["energy.battery_level"]（单字段）。
+* `request_id` - 单次调用的 trace id；省略时自动生成 uuid4，并在 SdkResult.request_id 中原样返回，便于日志关联。
+
+**返回:**
+
+* `SdkResult`：成功时 `data` 为状态 dict（energy/motion/execution/safety/health）；失败时 `error` 为标准 ErrorCode
+
+---
+
 <h3 id="system">System</h3>
 
 <h4 id="system-set_work_mode">set_work_mode</h4>
@@ -2163,7 +2229,7 @@ def set_end_pose(_geometry_msgs__: _geometry_msgs__.Pose, timeout) -> ExecutionR
 
 position: [x, y, z] in meters, range: [-5.0, 5.0]
 
-orientation: [qx, qy, qz, qw] quaternion, range: [-3.14, 3.14]
+orientation: [qx, qy, qz, qw] quaternion, range: [-1.0, 1.0]
 
 **参数:**
 
@@ -2338,6 +2404,31 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 | `y` | `double` |  |
 | `z` | `double` |  |
 | `w` | `double` |  |
+
+---
+
+<a id="message-geometry_msgstransform"></a>
+#### Transform
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `translation` | [`Vector3`](#message-geometry_msgsvector3) |  |
+| `rotation` | [`Quaternion`](#message-geometry_msgsquaternion) |  |
+
+---
+
+<a id="message-geometry_msgstransformstamped"></a>
+#### TransformStamped
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `header` | [`Header`](#message-std_msgsheader) |  |
+| `child_frame_id` | `string` |  |
+| `transform` | [`Transform`](#message-geometry_msgstransform) |  |
 
 ---
 
@@ -2592,6 +2683,17 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 ---
 
+<a id="message-tf2_msgstfmessage"></a>
+#### TFMessage
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `transforms` | List[[`TransformStamped`](#message-geometry_msgstransformstamped)] |  |
+
+---
+
 <a id="message-xrsdkaudiodata"></a>
 #### AudioData
 
@@ -2750,6 +2852,40 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 ---
 
+<a id="message-xrsdkgetmaplistresponse"></a>
+#### GetMapListResponse
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `header` | [`ExecutionResult`](#message-xrsdkexecutionresult) | Call status: is_success / error_code / error_message |
+| `map_list` | List[`string`] | List of saved map names |
+
+---
+
+<a id="message-xrsdkgetrobotstatusreply"></a>
+#### GetRobotStatusReply
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `json` | `string` | Payload (JSON string) grouped into energy/motion/execution/safety/health.<br>Unavailable or uncaptured fields are null. |
+
+---
+
+<a id="message-xrsdkgetrobotstatusrequest"></a>
+#### GetRobotStatusRequest
+
+**字段:**
+
+| 字段 | 类型 | 说明 |
+|------|------|--------|
+| `fields` | List[`string`] | Filter field list:<br>empty -> all fields;<br>"energy" -> whole category;<br>"energy.battery_level" -> single field (two-level path). |
+
+---
+
 <a id="message-xrsdkgripperposition"></a>
 #### GripperPosition
 
@@ -2757,6 +2893,7 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 
 | 字段 | 类型 | 说明 |
 |------|------|--------|
+| `header` | [`Header`](#message-std_msgsheader) |  |
 | `position` | `float` |  |
 
 ---
@@ -3046,6 +3183,7 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 |------|--------|
 | `MANIPULATOR_END_POSE` (0) | 机械臂（手臂和腰部）的末端位姿控制模式 |
 | `MANIPULATOR_JOINT_POSITIONS` (1) | 机械臂（手臂和腰部）的关节位置控制模式 |
+| `MANIPULATOR_GRAVITY_COMPENSATION` (2) | 主臂重力补偿 / 用户接管遥操模式 |
 
 ---
 
@@ -3069,6 +3207,7 @@ def get_end_pose_stream(timeout) -> Iterator[_geometry_msgs__.PoseStamped]
 | `EX001` (2) |  |
 | `DESKTOP` (3) |  |
 | `EX001_MASTER` (4) |  |
+| `EX002` (5) |  |
 | `INVALID_MODEL` (255) |  |
 
 ---

@@ -15,7 +15,14 @@ def main(
     print(f"static_info: {result}")
 
     result = robot.system.get_dynamic_info()
-    print(f"dynamic_info: {result.power_status.is_charging}, {result.power_status.value}, {result.runtime_info.cpu_load_percent}, {result.runtime_info.gpu_load_percent}, {result.runtime_info.memory_usage_mb}, {result.runtime_info.core_temp_celsius}")
+    print(
+        f"dynamic_info: is_charging: {result.power_status.is_charging}, "
+        f"battery_level: {result.power_status.value}% "
+        f"cpu_usage: {result.runtime_info.cpu_load_percent}% "
+        f"gpu_usage: {result.runtime_info.gpu_load_percent}% "
+        f"memory_usage: {result.runtime_info.memory_usage_mb}MB, "
+        f"core_temp: {result.runtime_info.core_temp_celsius}℃"
+    )
 
 if __name__ == "__main__":
     typer.run(main)
