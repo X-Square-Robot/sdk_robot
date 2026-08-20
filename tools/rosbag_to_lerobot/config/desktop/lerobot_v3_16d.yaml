@@ -1,0 +1,150 @@
+# Desktop -> LeRobot V3 16D
+# Topics aligned with the Desktop recorded topic layout.
+#
+# Desktop bags have no /head/joint_states; head_pitch/yaw stay 0
+# when that topic is absent. Cameras still require head + both wrists.
+#
+# action.mode: next_state  => action[t] = state[t+1]
+# For command-topic actions, see:
+#   config/desktop/lerobot_v3_16d_action_from_sources.yaml
+
+profile: desktop/lerobot_v3_16d
+robot_type: desktop
+lerobot_robot_type: desktop
+
+topics:
+  cameras:
+    head:
+      required: true
+      candidates:
+        - topic: /camera_head_front/color/image_raw/compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 0
+        - topic: /x2robot/obs/camera_front/compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 10
+
+    wrist_left:
+      required: true
+      candidates:
+        - topic: /camera1/usb_cam1/image_raw/image_compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 0
+        - topic: /x2robot/obs/camera_left/compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 10
+
+    wrist_right:
+      required: true
+      candidates:
+        - topic: /camera3/usb_cam3/image_raw/image_compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 0
+        - topic: /x2robot/obs/camera_right/compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 10
+
+  observations:
+    left_arm_end_pose:
+      decoder: pose_stamped
+      required: true
+      candidates:
+        - topic: /left_arm/end_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 0
+        - topic: /master_left_arm/end_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 10
+
+    right_arm_end_pose:
+      decoder: pose_stamped
+      required: true
+      candidates:
+        - topic: /right_arm/end_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 0
+        - topic: /master_right_arm/end_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 10
+
+    left_gripper_joint_states:
+      decoder: joint_state
+      required: true
+      candidates:
+        - topic: /left_gripper/joint_states
+          type: sensor_msgs/msg/JointState
+          priority: 0
+
+    right_gripper_joint_states:
+      decoder: joint_state
+      required: true
+      candidates:
+        - topic: /right_gripper/joint_states
+          type: sensor_msgs/msg/JointState
+          priority: 0
+
+    # Not present in Desktop bags by default; kept optional for 16D layout.
+    head_joint_states:
+      decoder: joint_state
+      required: false
+      candidates:
+        - topic: /head/joint_states
+          type: sensor_msgs/msg/JointState
+          priority: 0
+
+state:
+  fields:
+    - name: left_ee_pos_x
+      source: left_arm_end_pose
+      extractor: pose.position.x
+    - name: left_ee_pos_y
+      source: left_arm_end_pose
+      extractor: pose.position.y
+    - name: left_ee_pos_z
+      source: left_arm_end_pose
+      extractor: pose.position.z
+    - name: left_ee_roll
+      source: left_arm_end_pose
+      extractor: pose.euler.roll
+    - name: left_ee_pitch
+      source: left_arm_end_pose
+      extractor: pose.euler.pitch
+    - name: left_ee_yaw
+      source: left_arm_end_pose
+      extractor: pose.euler.yaw
+    - name: left_gripper
+      source: left_gripper_joint_states
+      extractor: joint.position[0]
+
+    - name: right_ee_pos_x
+      source: right_arm_end_pose
+      extractor: pose.position.x
+    - name: right_ee_pos_y
+      source: right_arm_end_pose
+      extractor: pose.position.y
+    - name: right_ee_pos_z
+      source: right_arm_end_pose
+      extractor: pose.position.z
+    - name: right_ee_roll
+      source: right_arm_end_pose
+      extractor: pose.euler.roll
+    - name: right_ee_pitch
+      source: right_arm_end_pose
+      extractor: pose.euler.pitch
+    - name: right_ee_yaw
+      source: right_arm_end_pose
+      extractor: pose.euler.yaw
+    - name: right_gripper
+      source: right_gripper_joint_states
+      extractor: joint.position[0]
+
+    - name: head_pitch
+      source: head_joint_states
+      extractor: joint.position[0]
+    - name: head_yaw
+      source: head_joint_states
+      extractor: joint.position[1]
+
+action:
+  mode: next_state
+  fields_from: state
