@@ -147,6 +147,20 @@ python3 convert_to_lerobot.py \
 
 5. **Camera names**: Camera names in `dataset_metadata.json` should match those in `episode.json` frames (e.g., `head_camera`, `left_arm_camera`, `right_arm_camera`).
 
+## Rosbag → LeRobot V3 (rosbag2 input)
+
+If your data was recorded as ROS 2 rosbag2 (`.db3` / `.mcap`, or a `.tar` / `.tar.gz` archive of a rosbag2 directory), use the dedicated tool under [`rosbag_to_lerobot/`](./rosbag_to_lerobot/README.md). It converts rosbag2 directly into LeRobot **V3** datasets without a ROS installation, with per-robot topic mappings (`quanta_x1`, `quanta_x2` incl. G-gripper, `desktop`) in YAML and single-bag / batch / task.json entry points.
+
+```bash
+cd rosbag_to_lerobot
+python3 scripts/convert_rosbag_to_lerobot.py \
+    --bag-path /path/to/rosbag2_dir_or_tar \
+    --output-dir ./lerobot_data \
+    --repo-id "my_robot/dataset" \
+    --config config/quanta_x1/lerobot_v3_16d.yaml \
+    --use-videos --video-codec h264
+```
+
 ## Load Dataset
 
 ```python

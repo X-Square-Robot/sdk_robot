@@ -147,6 +147,20 @@ python3 convert_to_lerobot.py \
 
 5. **相机名称**：`dataset_metadata.json` 中的相机名称需与 `episode.json` 帧内一致（如 `head_camera`、`left_arm_camera`、`right_arm_camera`）。
 
+## Rosbag → LeRobot V3（rosbag2 输入）
+
+如果数据是以 ROS 2 rosbag2（`.db3` / `.mcap`，或打包成 `.tar` / `.tar.gz` 的 rosbag2 目录）录制的，请使用 [`rosbag_to_lerobot/`](./rosbag_to_lerobot/README_CN.md) 下的专用工具。它无需安装 ROS，可将 rosbag2 直接转换为 LeRobot **V3** 数据集；各机型（`quanta_x1`、`quanta_x2` 含 G 夹爪、`desktop`）的 topic 映射以 YAML 配置，提供单包 / 批处理 / task.json 三种入口。
+
+```bash
+cd rosbag_to_lerobot
+python3 scripts/convert_rosbag_to_lerobot.py \
+    --bag-path /path/to/rosbag2_dir_or_tar \
+    --output-dir ./lerobot_data \
+    --repo-id "my_robot/dataset" \
+    --config config/quanta_x1/lerobot_v3_16d.yaml \
+    --use-videos --video-codec h264
+```
+
 ## 加载数据集
 
 ```python

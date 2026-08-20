@@ -1,0 +1,231 @@
+# Quanta X2 -> LeRobot V3 16D
+# action.mode: from_sources  => action fields come from command / cmd topics
+# instead of state[t+1].
+
+profile: quanta_x2/lerobot_v3_16d_action_from_sources
+robot_type: quanta_x2
+lerobot_robot_type: quanta_x2
+
+topics:
+  cameras:
+    head:
+      required: true
+      candidates:
+        - topic: /camera_head_front/color/image_raw/compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 0
+
+    wrist_left:
+      required: true
+      candidates:
+        - topic: /camera1/usb_cam1/image_raw/image_compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 0
+
+    wrist_right:
+      required: true
+      candidates:
+        - topic: /camera3/usb_cam3/image_raw/image_compressed
+          type: sensor_msgs/msg/CompressedImage
+          priority: 0
+
+  observations:
+    left_arm_end_pose:
+      decoder: pose_stamped
+      required: true
+      candidates:
+        - topic: /whole_body_controller/left_wrist_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 0
+        - topic: /left_arm/end_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 10
+
+    right_arm_end_pose:
+      decoder: pose_stamped
+      required: true
+      candidates:
+        - topic: /whole_body_controller/right_wrist_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 0
+        - topic: /right_arm/end_pose
+          type: geometry_msgs/msg/PoseStamped
+          priority: 10
+
+    left_gripper_state:
+      decoder: float32
+      required: true
+      candidates:
+        - topic: /gripper/state/left
+          type: std_msgs/msg/Float32
+          priority: 0
+
+    right_gripper_state:
+      decoder: float32
+      required: true
+      candidates:
+        - topic: /gripper/state/right
+          type: std_msgs/msg/Float32
+          priority: 0
+
+    head_joint_states:
+      decoder: joint_state
+      required: false
+      candidates:
+        - topic: /head/joint_states
+          type: sensor_msgs/msg/JointState
+          priority: 0
+
+    # Action sources (command / cmd echo topics)
+    left_arm_end_pose_cmd:
+      decoder: pose_stamped
+      required: true
+      candidates:
+        - topic: /left_arm/pose_command/root_frame
+          type: geometry_msgs/msg/PoseStamped
+          priority: 0
+        - topic: /whole_body_controller/left_wrist_pose_cmd
+          type: geometry_msgs/msg/PoseStamped
+          priority: 10
+
+    right_arm_end_pose_cmd:
+      decoder: pose_stamped
+      required: true
+      candidates:
+        - topic: /right_arm/pose_command/root_frame
+          type: geometry_msgs/msg/PoseStamped
+          priority: 0
+        - topic: /whole_body_controller/right_wrist_pose_cmd
+          type: geometry_msgs/msg/PoseStamped
+          priority: 10
+
+    left_gripper_cmd:
+      decoder: float32
+      required: true
+      candidates:
+        - topic: /gripper/cmd/left
+          type: std_msgs/msg/Float32
+          priority: 0
+
+    right_gripper_cmd:
+      decoder: float32
+      required: true
+      candidates:
+        - topic: /gripper/cmd/right
+          type: std_msgs/msg/Float32
+          priority: 0
+
+    head_position_cmd:
+      decoder: float64_multi_array
+      required: false
+      candidates:
+        - topic: /head_position_controller/commands
+          type: std_msgs/msg/Float64MultiArray
+          priority: 0
+
+state:
+  fields:
+    - name: left_ee_pos_x
+      source: left_arm_end_pose
+      extractor: pose.position.x
+    - name: left_ee_pos_y
+      source: left_arm_end_pose
+      extractor: pose.position.y
+    - name: left_ee_pos_z
+      source: left_arm_end_pose
+      extractor: pose.position.z
+    - name: left_ee_roll
+      source: left_arm_end_pose
+      extractor: pose.euler.roll
+    - name: left_ee_pitch
+      source: left_arm_end_pose
+      extractor: pose.euler.pitch
+    - name: left_ee_yaw
+      source: left_arm_end_pose
+      extractor: pose.euler.yaw
+    - name: left_gripper
+      source: left_gripper_state
+      extractor: float.value
+
+    - name: right_ee_pos_x
+      source: right_arm_end_pose
+      extractor: pose.position.x
+    - name: right_ee_pos_y
+      source: right_arm_end_pose
+      extractor: pose.position.y
+    - name: right_ee_pos_z
+      source: right_arm_end_pose
+      extractor: pose.position.z
+    - name: right_ee_roll
+      source: right_arm_end_pose
+      extractor: pose.euler.roll
+    - name: right_ee_pitch
+      source: right_arm_end_pose
+      extractor: pose.euler.pitch
+    - name: right_ee_yaw
+      source: right_arm_end_pose
+      extractor: pose.euler.yaw
+    - name: right_gripper
+      source: right_gripper_state
+      extractor: float.value
+
+    - name: head_pitch
+      source: head_joint_states
+      extractor: joint.position[0]
+    - name: head_yaw
+      source: head_joint_states
+      extractor: joint.position[1]
+
+action:
+  mode: from_sources
+  fields:
+    - name: left_ee_pos_x
+      source: left_arm_end_pose_cmd
+      extractor: pose.position.x
+    - name: left_ee_pos_y
+      source: left_arm_end_pose_cmd
+      extractor: pose.position.y
+    - name: left_ee_pos_z
+      source: left_arm_end_pose_cmd
+      extractor: pose.position.z
+    - name: left_ee_roll
+      source: left_arm_end_pose_cmd
+      extractor: pose.euler.roll
+    - name: left_ee_pitch
+      source: left_arm_end_pose_cmd
+      extractor: pose.euler.pitch
+    - name: left_ee_yaw
+      source: left_arm_end_pose_cmd
+      extractor: pose.euler.yaw
+    - name: left_gripper
+      source: left_gripper_cmd
+      extractor: float.value
+
+    - name: right_ee_pos_x
+      source: right_arm_end_pose_cmd
+      extractor: pose.position.x
+    - name: right_ee_pos_y
+      source: right_arm_end_pose_cmd
+      extractor: pose.position.y
+    - name: right_ee_pos_z
+      source: right_arm_end_pose_cmd
+      extractor: pose.position.z
+    - name: right_ee_roll
+      source: right_arm_end_pose_cmd
+      extractor: pose.euler.roll
+    - name: right_ee_pitch
+      source: right_arm_end_pose_cmd
+      extractor: pose.euler.pitch
+    - name: right_ee_yaw
+      source: right_arm_end_pose_cmd
+      extractor: pose.euler.yaw
+    - name: right_gripper
+      source: right_gripper_cmd
+      extractor: float.value
+
+    - name: head_pitch
+      source: head_position_cmd
+      extractor: array[0]
+    - name: head_yaw
+      source: head_position_cmd
+      extractor: array[1]
