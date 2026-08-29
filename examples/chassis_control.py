@@ -134,7 +134,7 @@ def move_by_map(robot: Robot, cancel: bool = False):
     result = robot.chassis.set_trajectory_coord_system_mode(coord_system_mode)
     print(f"set trajectory coord system mode success: {result.is_success}")
 
-    result = robot.navigation.start_mapping();
+    result = robot.navigation.start_mapping()
     print(f"start mapping success: {result.is_success}")
 
     print(f"move around to build map...")
