@@ -57,6 +57,25 @@ The script uses the following default parameters:
 - This sample is intended for EX001 inference and SDK validation.
 - Logs and responses will be printed directly to the terminal.
 
+### v1.1.1 hotfix: training and inference data contract
+
+- `velocity_decomposed_odom` contains body-frame `[vx, vy, vyaw]` in `[m/s, m/s, rad/s]`. The converter reads observations from `odometry.twist` and actions from `odometry_action.twist` for both Quanta X1 and X2. The LeRobot feature names are `odom_vx`, `odom_vy`, and `odom_vyaw`.
+- The online client reads measured velocity with `chassis.get_odometry()`. Predicted velocities are still integrated into chassis position trajectories; `car_pose_odom` remains a position trajectory.
+- Training `head_rotation` and online `head_pos` both use `[pitch, yaw]` in radians, including head commands, axis limits, and debug plots.
+- Camera arrays are RGB. They are converted to BGR before OpenCV JPEG encoding so the model receives the correct colors.
+
+Datasets produced by the old converter with chassis poses in velocity fields must be regenerated from the original recordings, with normalization statistics recomputed and affected models retrained. Updating only the client is insufficient. Original recordings must contain valid `twist` measurements; missing velocity components retain the converter's zero-fill behavior and are never inferred from pose. Chassis action labels still represent the next frame's measured velocity, not the operator's requested velocity.
+
+This client consumes absolute joint/end-effector targets and chassis velocity. Do not use `--delta-action` or `--relative-start` for datasets intended for this client, since those options transform the entire vector.
+
+Run the offline regression tests from the repository root after installing the converter dependencies, sample dependencies, `pytest`, and `scipy`:
+
+```bash
+PYTHONPATH=client python -m pytest -q tests/test_sdk_inference_contract.py
+```
+
+The tests use simulated robot interfaces without connecting to a robot or model service.
+
 ### 📄 License
 
 This project is provided for internal testing and SDK integration purposes.

@@ -243,7 +243,7 @@ class EX001SDKClient(RobotClientBase):
 
     @staticmethod
     def _compress_image(image_np):
-        """Compress image to JPEG base64 string."""
+        """Compress an RGB image to a JPEG base64 string."""
         if image_np is None:
             return None
 
@@ -252,7 +252,9 @@ class EX001SDKClient(RobotClientBase):
             logger.warning(f"Image is not a numpy array, got type: {type(image_np)}")
             return None
 
-        success, encoded = cv2.imencode(".jpg", image_np)
+        # Camera decoding returns RGB; OpenCV's JPEG encoder expects BGR.
+        image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+        success, encoded = cv2.imencode(".jpg", image_bgr)
         if not success:
             return None
         import base64
@@ -426,11 +428,9 @@ class EX001SDKClient(RobotClientBase):
         arm_r_vel.append(0.0)
         
         # 4. Get Head, Lift, Chassis Data
-        head_state = (
-            self.robot_controller.head.get_pose()
-        )  # Robot interface returns [pitch, yaw]
-        # Flip to [yaw, pitch] for API consistency
-        head_pos = [head_state.yaw, head_state.pitch]
+        head_state = self.robot_controller.head.get_pose()
+        # Match head_rotation in the training data: [pitch, yaw].
+        head_pos = [head_state.pitch, head_state.yaw]
 
         lift_state_obj = (
             self.robot_controller.lift.get_lift_position()
@@ -464,39 +464,11 @@ class EX001SDKClient(RobotClientBase):
                 else [float(chassis_state_obj)]
             )
 
-        # Try to get velocity
-        chassis_vel_state = [0.0, 0.0, 0.0]
-        if (
-            self.last_velocity_actions is not None
-            and len(self.last_velocity_actions) >= 2
-        ):
-            try:
-                # Use the last two points to calculate velocity
-                p_curr = np.array(self.last_velocity_actions[-1])
-                p_prev = np.array(self.last_velocity_actions[-2])
-
-                dt = 1.0 / self.camera_capture_hz
-
-                dx = p_curr[0] - p_prev[0]
-                dy = p_curr[1] - p_prev[1]
-                dtheta = p_curr[2] - p_prev[2]
-
-                # Unwrap angle diff
-                dtheta = (dtheta + np.pi) % (2 * np.pi) - np.pi
-
-                # Transform to body frame of p_prev
-                theta = p_prev[2]
-                cos_t = np.cos(theta)
-                sin_t = np.sin(theta)
-
-                vx = (dx * cos_t + dy * sin_t) / dt
-                vy = (-dx * sin_t + dy * cos_t) / dt
-                w = dtheta / dt
-
-                chassis_vel_state = [vx, vy, w]
-                logger.info(f"Calculated velocity state: {chassis_vel_state}")
-            except Exception as e:
-                logger.warning(f"Failed to calculate velocity: {e}")
+        # Match training observations: measured body-frame velocity from odometry,
+        # in m/s, m/s and rad/s. Predicted trajectories are not sensor feedback.
+        odometry = self.robot_controller.chassis.get_odometry()
+        twist = odometry.twist.twist
+        chassis_vel_state = [twist.linear.x, twist.linear.y, twist.angular.z]
 
         # 5. Get Camera Data
         cam_left = self._get_camera_image("left_camera")
@@ -780,7 +752,7 @@ class EX001SDKClient(RobotClientBase):
                 )
 
     def _control_head(self, i, head_actions, steps):
-        """Send control commands to head."""
+        """Send [pitch, yaw] model actions to the head, in radians."""
         if head_actions is not None:
             # Handle different lengths (chunk vs single vs hold)
             idx = min(i, len(head_actions) - 1)
@@ -788,24 +760,25 @@ class EX001SDKClient(RobotClientBase):
             assert (
                 len(h_cmd) >= 2
             ), f"head_actions[idx] is not a list of length 2: {h_cmd}"
-            logger.info(f"set head pose to yaw={h_cmd[0]}, pitch={h_cmd[1]}")
-            if h_cmd[1] > 0.9:
-                logger.warning(f"pitch is too large: {h_cmd[1]}")
-                h_cmd[1] = 0.9
-            if h_cmd[1] < -0.06:
-                logger.warning(f"pitch is too small: {h_cmd[1]}")
-                h_cmd[1] = -0.06
-            if h_cmd[0] > 1.2:
-                logger.warning(f"yaw is too large: {h_cmd[0]}")
-                h_cmd[0] = 1.2
-            if h_cmd[0] < -1.2:
-                logger.warning(f"yaw is too small: {h_cmd[0]}")
-                h_cmd[0] = -1.2
+            pitch, yaw = float(h_cmd[0]), float(h_cmd[1])
+            logger.info(f"set head pose to pitch={pitch}, yaw={yaw}")
+            if pitch > 0.9:
+                logger.warning(f"pitch is too large: {pitch}")
+                pitch = 0.9
+            if pitch < -0.06:
+                logger.warning(f"pitch is too small: {pitch}")
+                pitch = -0.06
+            if yaw > 1.2:
+                logger.warning(f"yaw is too large: {yaw}")
+                yaw = 1.2
+            if yaw < -1.2:
+                logger.warning(f"yaw is too small: {yaw}")
+                yaw = -1.2
             self.robot_controller.head.set_pose(
-                HeadPose(yaw=h_cmd[0], pitch=h_cmd[1])
+                HeadPose(pitch=pitch, yaw=yaw)
             )
             if i % 10 == 0:
-                logger.info(f"Step {i}/{steps}: Head Cmd=[{h_cmd[1]:.3f}, {h_cmd[0]:.3f}]")
+                logger.info(f"Step {i}/{steps}: Head Cmd=[{pitch:.3f}, {yaw:.3f}]")
         else:
             if i == 0:
                 logger.warning(
@@ -995,7 +968,7 @@ class EX001SDKClient(RobotClientBase):
                 'Velocity X (model output)', 'Velocity Y (model output)', 'Velocity Yaw (model output)',  # 14-16
                 'Chassis Pos X (integrated)', 'Chassis Pos Y (integrated)', 'Chassis Pos Yaw (integrated)',  # 17-19
                 'Height (Lift)',  # 20
-                'Head Yaw', 'Head Pitch'  # 21-22
+                'Head Pitch', 'Head Yaw'  # 21-22
             ]
             
             # Collect data for plotting

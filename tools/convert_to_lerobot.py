@@ -68,7 +68,7 @@ ROBOT_DATA_CONFIG = {
             "follow_right_gripper",          # 1 dimension - Follow right gripper position
             "head_rotation",                  # 2 dimensions - Head motor angle (pitch, yaw)
             "height",                         # 1 dimension - Lift height
-            "velocity_decomposed_odom",       # 3 dimensions - Odometry information (x, y, yaw)
+            "velocity_decomposed_odom",       # 3 dimensions - Body-frame velocity (vx, vy, vyaw)
         ],
         "state_order": [
             "master_left_ee_cartesian_pos",  # 3 dimensions - Master left arm end effector position (from master_left_arm_end_pose)
@@ -79,7 +79,7 @@ ROBOT_DATA_CONFIG = {
             "follow_right_gripper",          # 1 dimension - Follow right gripper position (from right_gripper_joint_states)
             "head_rotation",                  # 2 dimensions - Head motor angle (from head_joint_states)
             "height",                         # 1 dimension - Lift height (from lift_joint_states)
-            "velocity_decomposed_odom",       # 3 dimensions - Odometry information (from odometry x, y, yaw)
+            "velocity_decomposed_odom",       # 3 dimensions - Body-frame velocity (from odometry twist)
         ],
         # Define the data source mapping for each state field
         "state_source_mapping": {
@@ -129,7 +129,7 @@ ROBOT_DATA_CONFIG = {
             },
             "velocity_decomposed_odom": {
                 "source": "odometry",
-                "type": "odom_xy_yaw",  # Extract x, y, yaw
+                "type": "odom_velocity",  # Extract linear.x, linear.y, angular.z
                 "dim": 3
             }
         },
@@ -137,7 +137,7 @@ ROBOT_DATA_CONFIG = {
         "action_source_mapping": {
             "master_left_ee_cartesian_pos": {
                 "source": "master_left_arm_end_pose_action",
-                "type": "position",  # position, orientation_euler, joint_positions, odom_xy_yaw
+                "type": "position",  # position, orientation_euler, joint_positions, odom_velocity
                 "dim": 3
             },
             "master_left_ee_rotation": {
@@ -181,7 +181,7 @@ ROBOT_DATA_CONFIG = {
             },
             "velocity_decomposed_odom": {
                 "source": "odometry_action",
-                "type": "odom_xy_yaw",  # Extract x, y, yaw
+                "type": "odom_velocity",  # Extract linear.x, linear.y, angular.z
                 "dim": 3
             }
         }
@@ -197,7 +197,7 @@ ROBOT_DATA_CONFIG = {
             "follow_right_gripper",  # 1 dimension - Right gripper position
             "head_rotation",          # 2 dimensions - Head motor angle (pitch, yaw)
             "waist",                  # 4 dimensions - Waist joint positions (no lift)
-            "velocity_decomposed_odom",  # 3 dimensions - Odometry (x, y, yaw)
+            "velocity_decomposed_odom",  # 3 dimensions - Body-frame velocity (vx, vy, vyaw)
         ],
         "state_order": [
             "left_ee_cartesian_pos",
@@ -255,7 +255,7 @@ ROBOT_DATA_CONFIG = {
             },
             "velocity_decomposed_odom": {
                 "source": "odometry",
-                "type": "odom_xy_yaw",
+                "type": "odom_velocity",
                 "dim": 3
             }
         },
@@ -304,7 +304,7 @@ ROBOT_DATA_CONFIG = {
             },
             "velocity_decomposed_odom": {
                 "source": "odometry_action",
-                "type": "odom_xy_yaw",
+                "type": "odom_velocity",
                 "dim": 3
             }
         }
@@ -593,29 +593,18 @@ def extract_action_v3(frame: Dict[str, Any], robot_type: str = DEFAULT_ROBOT_TYP
                 else:
                     action_parts.extend([0.0] * dim)
         
-        elif source_type == "odom_xy_yaw":
-            # Extract x, y, yaw from odometry_action
-            if source_name in action_dict:
-                odom = action_dict[source_name]
-                pose = odom.get('pose', {})
-                pos = pose.get('position', {})
-                ori = pose.get('orientation', {})
-                # Position x, y
-                action_parts.extend([
-                    pos.get('x', 0.0),
-                    pos.get('y', 0.0)
-                ])
-                # Quaternion to yaw angle
-                _, _, yaw = quaternion_to_euler(
-                    ori.get('x', 0.0),
-                    ori.get('y', 0.0),
-                    ori.get('z', 0.0),
-                    ori.get('w', 1.0)
-                )
-                action_parts.append(yaw)
-            else:
-                action_parts.extend([0.0, 0.0, 0.0])
-        
+        elif source_type == "odom_velocity":
+            # The collector stores twist separately from pose. Never use pose as velocity.
+            odom = action_dict.get(source_name, {})
+            twist = odom.get('twist', {})
+            linear = twist.get('linear', {})
+            angular = twist.get('angular', {})
+            action_parts.extend([
+                linear.get('x', 0.0),
+                linear.get('y', 0.0),
+                angular.get('z', 0.0),
+            ])
+
         else:
             # Unknown type, fill with zero
             action_parts.extend([0.0] * dim)
@@ -684,7 +673,7 @@ def extract_state_v3(frame: Dict[str, Any], joint_indices: Optional[List[int]] =
     6. follow_right_gripper: Follow right gripper position
     7. head_rotation: Head motor angle
     8. height: Lift height
-    9. velocity_decomposed_odom: Odometry information
+    9. velocity_decomposed_odom: Body-frame velocity (m/s, m/s, rad/s)
     
     Args:
         frame: Frame data dictionary
@@ -806,29 +795,18 @@ def extract_state_v3(frame: Dict[str, Any], joint_indices: Optional[List[int]] =
                 else:
                     state_parts.extend([0.0] * dim)
         
-        elif source_type == "odom_xy_yaw":
-            # Extract x, y, yaw from odometry
-            if source_name in obs:
-                odom = obs[source_name]
-                pose = odom.get('pose', {})
-                pos = pose.get('position', {})
-                ori = pose.get('orientation', {})
-                # Position x, y
-                state_parts.extend([
-                    pos.get('x', 0.0),
-                    pos.get('y', 0.0)
-                ])
-                # Quaternion to yaw angle
-                _, _, yaw = quaternion_to_euler(
-                    ori.get('x', 0.0),
-                    ori.get('y', 0.0),
-                    ori.get('z', 0.0),
-                    ori.get('w', 1.0)
-                )
-                state_parts.append(yaw)
-            else:
-                state_parts.extend([0.0, 0.0, 0.0])
-        
+        elif source_type == "odom_velocity":
+            # The collector stores twist separately from pose. Never use pose as velocity.
+            odom = obs.get(source_name, {})
+            twist = odom.get('twist', {})
+            linear = twist.get('linear', {})
+            angular = twist.get('angular', {})
+            state_parts.extend([
+                linear.get('x', 0.0),
+                linear.get('y', 0.0),
+                angular.get('z', 0.0),
+            ])
+
         else:
             # Unknown type, fill with zero
             state_parts.extend([0.0] * dim)
@@ -1620,7 +1598,7 @@ def create_lerobot_dataset(
             elif action_name == "waist":
                 action_names.extend(["waist_joint_0", "waist_joint_1", "waist_joint_2", "waist_joint_3"])
             elif action_name == "velocity_decomposed_odom":
-                action_names.extend(["odom_x", "odom_y", "odom_yaw"])
+                action_names.extend(["odom_vx", "odom_vy", "odom_vyaw"])
         
         # Ensure number of names matches action_dim
         if len(action_names) != action_dim:
@@ -1957,7 +1935,7 @@ def convert_dataset(args):
                             elif state_field == "waist":
                                 state_names_list.extend(["waist_joint_0", "waist_joint_1", "waist_joint_2", "waist_joint_3"])
                             elif state_field == "velocity_decomposed_odom":
-                                state_names_list.extend(["odom_x", "odom_y", "odom_yaw"])
+                                state_names_list.extend(["odom_vx", "odom_vy", "odom_vyaw"])
                         
                         print(f"    State names number: {len(state_names_list)}")
                         print(f"    State names: {state_names_list}")
@@ -2001,7 +1979,7 @@ def convert_dataset(args):
             elif state_field == "waist":
                 state_names_list.extend(["waist_joint_0", "waist_joint_1", "waist_joint_2", "waist_joint_3"])
             elif state_field == "velocity_decomposed_odom":
-                state_names_list.extend(["odom_x", "odom_y", "odom_yaw"])
+                state_names_list.extend(["odom_vx", "odom_vy", "odom_vyaw"])
         state_dim_detected = len(state_names_list)
         print(f"  ⚠️  Warning: Cannot detect state dimension, using default values: {state_dim_detected}")
     
