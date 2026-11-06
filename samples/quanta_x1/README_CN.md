@@ -59,6 +59,25 @@ bash samples/quanta_x1/scripts/start_sdk_ex001.sh
 - 该示例主要用于 `Quanta_X1` 类型推理流程验证与 SDK 集成测试。
 - 推理日志与模型返回结果将直接输出在终端中。
 
+### v1.1.1 hotfix：训练与推理数据约定
+
+- `velocity_decomposed_odom` 的顺序为机体坐标系速度 `[vx, vy, vyaw]`，单位为 `[m/s, m/s, rad/s]`。转换脚本从 `odometry.twist` 提取观测、从 `odometry_action.twist` 提取动作；Quanta X1/X2 共用的转换配置均已修正。LeRobot 特征名相应改为 `odom_vx`、`odom_vy`、`odom_vyaw`。
+- 在线客户端通过 `chassis.get_odometry()` 读取实测速度。模型输出的速度仍按原流程积分为底盘位置轨迹；`car_pose_odom` 保留位置轨迹含义。
+- 训练数据的 `head_rotation` 和在线接口的 `head_pos` 均采用 `[pitch, yaw]`，单位为弧度；头部下发、限幅和调试图遵循相同顺序。
+- 相机数组使用 RGB；调用 OpenCV 的 JPEG 编码前转换为 BGR，保证模型解码后颜色正确。
+
+旧转换脚本曾把底盘位姿写入速度字段。包含这些错误字段的数据集需要从原始采集数据重新转换、重新计算归一化统计量，并重新训练相关模型，不能仅替换客户端。原始数据应包含真实的 `twist`；缺失的速度分量仍按转换器约定填零，不会通过位姿推算。当前采集器的底盘动作仍是下一帧实测速度，不代表操作者的目标速度指令。
+
+本客户端消费绝对关节/末端目标及底盘速度；转换数据用于该客户端时，不应启用 `--delta-action` 或 `--relative-start`，这两个选项会改变整个向量的含义。
+
+离线回归测试（安装转换脚本依赖、本示例依赖以及 `pytest`、`scipy` 后，在仓库根目录运行）：
+
+```bash
+PYTHONPATH=client python -m pytest -q tests/test_sdk_inference_contract.py
+```
+
+测试使用模拟机器人接口，不连接机器人或模型服务。
+
 ### 📄 说明
 
 本示例仅用于 SDK 测试、功能验证及集成参考。
