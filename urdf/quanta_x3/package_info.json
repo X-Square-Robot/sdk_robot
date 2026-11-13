@@ -1,0 +1,10 @@
+{
+  "name": "ex002-robot",
+  "version": "v00.05.08",
+  "description": "EX002 robot URDF",
+  "urdf_file": "ex002_robot_dvt1_rm001_g1_gripper.urdf ex002_robot_dvt1_rm003_dexterous_hand.urdf ex002_robot_dvt2_g_gripper_gmsl_universal_1.1.urdf ex002_robot_dvt2_rm001_g1_gripper.urdf ex002_robot_dvt2_rm003_dexterous_hand.urdf ex002_robot_evt1_rm001_g1_gripper.urdf ex002_robot_evt1_rm003_dexterous_hand.urdf ex002_robot_evt2_rm001_g1_gripper.urdf ex002_robot_evt2_rm003_dexterous_hand.urdf ex002_robot_pvt1_g_gripper_gmsl_universal_1.1.urdf ex002_robot_pvt1_rm001_g1_gripper_dvt2.urdf ex002_robot_pvt1_rm003_dexterous_hand_dvt1.urdf ex002_robot_pvt1_rm003_v4_dexterous_hand_evt1.urdf",
+  "resource_image": "registry.x2robot.com/xr/delivery/proj/ex002/resources/robot:ubuntu24.04-v00.05.08",
+  "build_date": "2026-11-06T16:26:24+08:00",
+  "git_commit": "e6d312a7112dc0c6ab13f101f0ca9f74dfc788e4",
+  "git_ref": "v00.05.08"
+}

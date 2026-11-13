@@ -1,0 +1,11 @@
+{
+  "model": "quanta_x3",
+  "version": "v00.05.08",
+  "archive_name": "ex002-robot-v00.05.08.zip",
+  "release_asset": "quanta_x3-urdf-v00.05.08.zip",
+  "sha256": "068b1051e6297487271801bbc6cdf636e137c1417a8cfcd2dcd6a7ceec306d4e",
+  "source_url": "https://gitlab.x2robot.com/xr/delivery/proj/ex002/resources/robot/-/package_files/13575/download",
+  "archive_root": "ex002-robot-v00.05.08",
+  "urdf_count": 13,
+  "mesh_count": 323
+}

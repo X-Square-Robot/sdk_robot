@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "model": "quanta_x1",
+  "replay_model": "quanta_x1",
+  "streams": {
+    "left_arm_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/left_arm/joint_states"
+      ],
+      "joint_count": 6,
+      "joint_names": [
+        "left_arm_joint1",
+        "left_arm_joint2",
+        "left_arm_joint3",
+        "left_arm_joint4",
+        "left_arm_joint5",
+        "left_arm_joint6"
+      ],
+      "aggregate_topic": "/joint_states",
+      "aggregate_default": true
+    },
+    "left_arm_end_pose": {
+      "kind": "pose",
+      "message_type": "geometry_msgs/msg/PoseStamped",
+      "topics": [
+        "/left_arm/end_pose"
+      ]
+    },
+    "left_gripper_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/left_gripper/joint_states"
+      ],
+      "joint_names": [
+        "left_arm_gripper"
+      ],
+      "aggregate_topic": "/joint_states",
+      "aggregate_default": true
+    },
+    "right_arm_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/right_arm/joint_states"
+      ],
+      "joint_count": 6,
+      "joint_names": [
+        "right_arm_joint1",
+        "right_arm_joint2",
+        "right_arm_joint3",
+        "right_arm_joint4",
+        "right_arm_joint5",
+        "right_arm_joint6"
+      ],
+      "aggregate_topic": "/joint_states",
+      "aggregate_default": true
+    },
+    "right_arm_end_pose": {
+      "kind": "pose",
+      "message_type": "geometry_msgs/msg/PoseStamped",
+      "topics": [
+        "/right_arm/end_pose"
+      ]
+    },
+    "right_gripper_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/right_gripper/joint_states"
+      ],
+      "joint_names": [
+        "right_arm_gripper"
+      ],
+      "aggregate_topic": "/joint_states",
+      "aggregate_default": true
+    },
+    "head_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/head/joint_states"
+      ],
+      "joint_names": [
+        "head_pitch_joint",
+        "head_yaw_joint"
+      ],
+      "joint_count": 2,
+      "aggregate_topic": "/joint_states",
+      "aggregate_default": true
+    },
+    "lift_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/lift/joint_states"
+      ],
+      "joint_names": [
+        "lift_joint"
+      ],
+      "joint_count": 1,
+      "aggregate_topic": "/joint_states",
+      "aggregate_default": true
+    },
+    "odometry": {
+      "kind": "odom",
+      "message_type": "nav_msgs/msg/Odometry",
+      "topics": [
+        "/odom"
+      ],
+      "item_id": "odom"
+    }
+  }
+}
