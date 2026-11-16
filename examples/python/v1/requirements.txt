@@ -1,0 +1,16 @@
+# Install the matching x2robot_sdk wheel first: it includes the x2robot v1 API.
+# Then run: python -m pip install -r examples/python/v1/requirements.txt
+# Native system packages are separate: ffmpeg for collection video export,
+# and an OpenCV-compatible display (libGL/GLib, X11 or Xvfb) for camera windows.
+grpcio>=1.51
+typing-extensions>=4.14
+numpy>=1.23,<3
+opencv-python>=4.8
+Pillow>=9
+typer>=0.9
+matplotlib>=3.7
+scipy>=1.10
+toppra>=0.6
+# PyAV 18 no longer supports Python 3.10.
+av>=14.0.1,<18.0.0; python_version == '3.10'
+av>=18.0.0; python_version >= '3.11'

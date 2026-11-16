@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "model": "quanta_x2",
+  "replay_model": "quanta_x2",
+  "streams": {
+    "left_arm_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/left_arm/state/joint"
+      ],
+      "joint_count": 7
+    },
+    "left_arm_end_pose": {
+      "kind": "pose",
+      "message_type": "geometry_msgs/msg/PoseStamped",
+      "topics": [
+        "/whole_body_controller/left_wrist_pose"
+      ]
+    },
+    "left_gripper_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/left_g_gripper_states/joint_states"
+      ]
+    },
+    "left_gripper_position": {
+      "kind": "scalar",
+      "message_type": "std_msgs/msg/Float32",
+      "topics": [
+        "/gripper/state/left"
+      ],
+      "item_id": "left_gripper_state"
+    },
+    "right_arm_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/right_arm/state/joint"
+      ],
+      "joint_count": 7
+    },
+    "right_arm_end_pose": {
+      "kind": "pose",
+      "message_type": "geometry_msgs/msg/PoseStamped",
+      "topics": [
+        "/whole_body_controller/right_wrist_pose"
+      ]
+    },
+    "right_gripper_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/right_g_gripper_states/joint_states"
+      ]
+    },
+    "right_gripper_position": {
+      "kind": "scalar",
+      "message_type": "std_msgs/msg/Float32",
+      "topics": [
+        "/gripper/state/right"
+      ],
+      "item_id": "right_gripper_state"
+    },
+    "head_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/head/joint_states"
+      ],
+      "joint_names": [
+        "head_pitch_joint",
+        "head_yaw_joint"
+      ],
+      "joint_count": 2
+    },
+    "waist_joint_states": {
+      "kind": "joints",
+      "message_type": "sensor_msgs/msg/JointState",
+      "topics": [
+        "/waist/state/joint"
+      ],
+      "joint_count": 4
+    },
+    "waist_end_pose": {
+      "kind": "pose",
+      "message_type": "geometry_msgs/msg/PoseStamped",
+      "topics": [
+        "/whole_body_controller/torso_pose"
+      ]
+    },
+    "odometry": {
+      "kind": "odom",
+      "message_type": "nav_msgs/msg/Odometry",
+      "topics": [
+        "/odom"
+      ],
+      "item_id": "odom"
+    }
+  }
+}
