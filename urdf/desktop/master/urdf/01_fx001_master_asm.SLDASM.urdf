@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="01_fx001_master_asm.SLDASM">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.123918512320107 0.0189543586973473 0.389131996727976"
+        rpy="0 0 0" />
+      <mass
+        value="29.2732622873564" />
+      <inertia
+        ixx="0.493497932507712"
+        ixy="-0.000191099875725248"
+        ixz="-0.00777705612432453"
+        iyy="0.349986778304203"
+        iyz="-0.00171474917303922"
+        izz="0.440690134169046" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://01_fx001_master_asm.SLDASM/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://01_fx001_master_asm.SLDASM/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="arm_right_Link">
+    <inertial>
+      <origin
+        xyz="-4.33680868994202E-19 5.55111512312578E-17 1.00000000000655E-05"
+        rpy="0 0 0" />
+      <mass
+        value="6.28318530718587E-08" />
+      <inertia
+        ixx="1.57100576630671E-14"
+        ixy="-1.09476442525376E-47"
+        ixz="1.22578796794513E-43"
+        iyy="1.57100576630671E-14"
+        iyz="-1.2142055200448E-48"
+        izz="3.14159265359293E-14" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://01_fx001_master_asm.SLDASM/meshes/arm_right_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://01_fx001_master_asm.SLDASM/meshes/arm_right_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="arm_right_joint"
+    type="continuous">
+    <origin
+      xyz="-0.00300000000002 -0.38 0.8988"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="arm_right_Link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="arm_left_Link">
+    <inertial>
+      <origin
+        xyz="0 0 1.00000000000655E-05"
+        rpy="0 0 0" />
+      <mass
+        value="6.28318530718587E-08" />
+      <inertia
+        ixx="1.57100576630671E-14"
+        ixy="3.28429327576129E-47"
+        ixz="-1.68431578947044E-43"
+        iyy="1.57100576630671E-14"
+        iyz="-1.21420552004456E-48"
+        izz="3.14159265359293E-14" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://01_fx001_master_asm.SLDASM/meshes/arm_left_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://01_fx001_master_asm.SLDASM/meshes/arm_left_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="arm_left_joint"
+    type="continuous">
+    <origin
+      xyz="-0.00300000000002 0.38 0.8988"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="arm_left_Link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+</robot>
